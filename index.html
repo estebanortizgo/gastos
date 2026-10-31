@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Gastos</title>
+  <!-- Sin manifest a propósito: así iOS guarda el enlace completo (con #k=token) al agregarla a inicio. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Gastos">
+  <meta name="robots" content="noindex">
+  <link rel="apple-touch-icon" href="icono-180.png">
+  <link rel="icon" href="icono-180.png">
+  <style>
+    :root { --bg:#f2f2f7; --card:#fff; --txt:#1c1c1e; --sub:#6e6e73; --acc:#0071e3; --ing:#1a7f37;
+            --linea:#e5e5ea; --warn:#b25000; --bad:#d70015; --velo:rgba(0,0,0,.35); }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#000; --card:#1c1c1e; --txt:#f5f5f7; --sub:#98989d; --acc:#0a84ff; --ing:#30d158;
+              --linea:#2c2c2e; --warn:#ffb340; --bad:#ff6961; --velo:rgba(0,0,0,.6); }
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 40px); background:var(--bg); color:var(--txt);
+           font:16px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+    h1 { font-size:28px; margin:0 0 16px; }
+    h2 { font-size:18px; margin:24px 0 8px; }
+    .card { background:var(--card); border-radius:14px; padding:14px 16px; }
+    .card span { display:block; color:var(--sub); font-size:13px; }
+    .card b { font-size:22px; font-variant-numeric:tabular-nums; }
+    .grande b { font-size:32px; }
+    .fila { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .sub { color:var(--sub); font-size:14px; margin:10px 2px 0; }
+    form { display:grid; gap:8px; margin-top:8px; }
+    input, select, button { font:inherit; padding:12px; border-radius:10px; border:1px solid var(--linea);
+                            background:var(--card); color:var(--txt); width:100%; }
+    select { appearance:none; -webkit-appearance:none; }
+    .selcat { display:grid; gap:8px; }
+    button { background:var(--acc); color:#fff; border:0; font-weight:600; }
+    button:disabled { opacity:.5; }
+    button.sec { background:var(--linea); color:var(--txt); }
+    button.peligro { background:transparent; color:var(--bad); border:1px solid var(--bad); }
+    .seg { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .seg label { text-align:center; padding:10px; border-radius:10px; background:var(--card);
+                 border:1px solid var(--linea); font-size:15px; }
+    .seg input { display:none; }
+    .seg label:has(input:checked) { border-color:var(--acc); color:var(--acc); font-weight:600; }
+    ul { list-style:none; margin:0; padding:0; background:var(--card); border-radius:14px; }
+    li { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px;
+         border-bottom:1px solid var(--linea); }
+    li:last-child { border-bottom:0; }
+    li.toca { cursor:pointer; }
+    li.toca:active { background:var(--linea); }
+    .nom { font-weight:500; }
+    .det { color:var(--sub); font-size:13px; }
+    .m { font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .m.ingreso, .m.reembolso { color:var(--ing); }
+    .m.presupuesto { color:var(--acc); }
+    .pend { display:block; }
+    .pend .arriba { display:flex; justify-content:space-between; gap:12px; }
+    .pend .abajo { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:8px; }
+    .pend .abajo button { width:auto; padding:10px 14px; }
+    .pend input, .pend select { padding:10px; }
+    /* Presupuesto */
+    .pres { margin-bottom:10px; }
+    .pres b { font-size:40px; }
+    .pres.warn b { color:var(--warn); }
+    .pres.bad b { color:var(--bad); }
+    .barra { height:8px; background:var(--linea); border-radius:4px; overflow:hidden; margin:10px 0 6px; }
+    .barra i { display:block; height:100%; width:0; background:var(--acc); border-radius:4px; transition:width .3s; }
+    .pres.warn .barra i { background:var(--warn); }
+    .pres.bad .barra i { background:var(--bad); }
+    .pres small { color:var(--sub); font-size:13px; }
+    /* Por categoría */
+    .nav { display:flex; align-items:center; justify-content:space-between; margin:24px 0 8px; }
+    .nav h2 { margin:0; }
+    .nav div { display:flex; align-items:center; gap:6px; }
+    .nav button { width:36px; height:36px; padding:0; border-radius:18px; background:var(--card); color:var(--acc); font-size:20px; }
+    .nav button:disabled { color:var(--sub); }
+    .nav small { color:var(--sub); font-size:14px; min-width:110px; text-align:center; }
+    .cat li { display:block; }
+    .cat .arriba { display:flex; justify-content:space-between; gap:12px; }
+    .cat .barra { margin:8px 0 0; height:6px; }
+    /* Reglas */
+    details { margin-top:24px; }
+    summary { font-size:18px; font-weight:700; cursor:pointer; list-style:none; }
+    summary::-webkit-details-marker { display:none; }
+    summary::after { content:' ›'; color:var(--sub); }
+    details[open] summary::after { content:' ⌄'; }
+    .renombrar { display:grid; gap:8px; margin-top:12px; }
+    /* Panel de edición */
+    .velo { position:fixed; inset:0; background:var(--velo); display:flex; align-items:flex-end; z-index:10; }
+    .velo[hidden] { display:none; }
+    .panel { background:var(--bg); width:100%; max-height:90vh; overflow:auto; border-radius:16px 16px 0 0;
+             padding:18px 16px 28px; }
+    .panel h3 { margin:0 0 4px; font-size:20px; }
+    .panel .acciones { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <h1>Mis gastos</h1>
+
+  <div class="card pres" id="pres">
+    <span id="presTitulo">Disponible del presupuesto</span>
+    <b id="disp">—</b>
+    <div class="barra"><i id="barra"></i></div>
+    <small id="presDet"></small>
+  </div>
+
+  <div class="card grande"><span>Gastado este mes</span><b id="mes">—</b></div>
+  <div class="fila">
+    <div class="card"><span>Hoy</span><b id="hoy">—</b></div>
+    <div class="card"><span>Esta semana</span><b id="semana">—</b></div>
+  </div>
+  <p class="sub" id="ingresos"></p>
+
+  <div id="pend" hidden>
+    <h2>Por clasificar</h2>
+    <ul id="pendientes"></ul>
+  </div>
+
+  <h2>Agregar a mano</h2>
+  <form id="f">
+    <div class="seg" id="tipos"></div>
+    <input id="monto" inputmode="decimal" placeholder="Monto" required>
+    <input id="concepto" placeholder="Concepto (ej. tacos, cine)">
+    <div id="catMano"></div>
+    <button id="btn">Agregar</button>
+  </form>
+
+  <div class="nav">
+    <h2>Por categoría</h2>
+    <div><button id="mesAnt" aria-label="Mes anterior">‹</button><small id="mesNombre"></small><button id="mesSig" aria-label="Mes siguiente">›</button></div>
+  </div>
+  <ul class="cat" id="cats"></ul>
+  <p class="sub" id="catTotal"></p>
+
+  <h2>Últimos movimientos</h2>
+  <p class="sub" style="margin:-4px 2px 8px">Toca uno para editarlo o borrarlo.</p>
+  <ul id="lista"><li class="det">Cargando…</li></ul>
+
+  <details id="detReglas">
+    <summary>Categorías y reglas</summary>
+    <p class="sub">Si el comercio <b>contiene</b> el texto, el gasto va a esa categoría. Si varias coinciden, gana la más específica (la más larga).</p>
+    <ul id="reglas" style="margin-top:8px"></ul>
+    <form id="nuevaRegla"><button type="submit" class="sec">➕ Nueva regla</button></form>
+    <h2>Renombrar categoría</h2>
+    <form class="renombrar" id="fRen">
+      <select id="renDe"></select>
+      <input id="renA" placeholder="Nombre nuevo" required>
+      <button>Renombrar</button>
+    </form>
+  </details>
+
+  <div class="velo" id="velo" hidden><div class="panel" id="panel"></div></div>
+
+  <script>
+    // Página estática (GitHub Pages): los datos viven en la hoja de Google y se piden al script.
+    // El token va después de "#", así que el navegador nunca lo manda a GitHub.
+    const URL_APP = 'https://script.google.com/macros/s/AKfycbzXfEPuWonfambkwxvt16c8ViCc8voGutpAYxmNtBNcofR336NrgrOF-hjcrZ4ACxhrvQ/exec';
+    const deHash = new URLSearchParams(location.hash.slice(1)).get('k');
+    if (deHash) localStorage.setItem('k', deHash);
+    const K = deHash || localStorage.getItem('k');
+    let MES = null;   // mes que se ve en "Por categoría" (null = el actual)
+    let CATS = [];
+
+    // Petición directa al script (texto plano = sin preflight CORS). No usa la sesión de Google.
+    async function api(cuerpo) {
+      if (!K) throw new Error('Falta el token. Abre la app desde el enlace de la hoja (Config → B3).');
+      const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify(Object.assign({ k: K, app: true, mes: MES }, cuerpo)) });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error);
+      return j.datos;
+    }
+    const dinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+    const $ = id => document.getElementById(id);
+    const el = (tag, props, ...hijos) => { const e = Object.assign(document.createElement(tag), props || {}); e.append(...hijos); return e; };
+    function error(e) { alert((e && e.message) || e); }
+
+    const TIPOS = [
+      ['gasto', 'Gasto', 'Concepto (ej. tacos, cine)'],
+      ['reembolso', 'Me regresaron', '¿Quién te regresó? (ej. Juan, cena)'],
+      ['presupuesto', '➕ Presupuesto', 'Nota (ej. quincena)'],
+      ['ingreso', 'Ingreso', 'Concepto (ej. pago cliente)'],
+    ];
+
+    // Botones de tipo (Gasto / Me regresaron / ➕ Presupuesto / Ingreso) para el formulario y el panel.
+    function botonesTipo(cont, nombre, actual, alCambiar) {
+      cont.replaceChildren(...TIPOS.map(([v, t]) => {
+        const inp = el('input', { type: 'radio', name: nombre, value: v, checked: v === actual });
+        inp.addEventListener('change', () => alCambiar(v));
+        return el('label', {}, inp, t);
+      }));
+    }
+
+    // Menú desplegable de categorías; "➕ Otra…" muestra un campo para escribir una nueva.
+    function selector(primera, valor) {
+      const sel = el('select');
+      const otra = el('input', { placeholder: 'Nombre de la nueva categoría', hidden: true });
+      const add = (v, t) => sel.append(el('option', { value: v, textContent: t }));
+      add('', primera);
+      CATS.forEach(c => add(c, c));
+      add('__otra', '➕ Otra…');
+      if (valor && CATS.includes(valor)) sel.value = valor;
+      sel.addEventListener('change', () => { otra.hidden = sel.value !== '__otra'; if (!otra.hidden) otra.focus(); });
+      const cont = el('div', { className: 'selcat' }, sel, otra);
+      cont.valor = () => sel.value === '__otra' ? otra.value.trim() : sel.value;
+      return cont;
+    }
+
+    // ---------- Pintar ----------
+
+    function renderPresupuesto(p) {
+      const caja = $('pres');
+      caja.classList.remove('warn', 'bad');
+      if (!p.activo) {
+        $('presTitulo').textContent = 'Sin presupuesto';
+        $('disp').textContent = '—';
+        $('barra').style.width = '0';
+        $('presDet').textContent = 'Agrega dinero con "➕ Presupuesto" abajo.';
+        return;
+      }
+      const total = p.abonado + p.reembolsos;
+      const usado = total ? Math.min(p.gastado / total, 1) : 1;
+      if (p.disponible < 0) caja.classList.add('bad');
+      else if (usado >= 0.8) caja.classList.add('warn');
+      $('presTitulo').textContent = p.disponible < 0 ? 'Te pasaste del presupuesto' : 'Disponible del presupuesto';
+      $('disp').textContent = (p.disponible < 0 ? '−' : '') + dinero.format(Math.abs(p.disponible));
+      $('barra').style.width = (usado * 100).toFixed(1) + '%';
+      $('presDet').textContent = 'Gastado ' + dinero.format(p.gastado) + ' de ' + dinero.format(total)
+        + (p.reembolsos ? ' (incluye ' + dinero.format(p.reembolsos) + ' que te regresaron)' : '');
+    }
+
+    function renderCategorias(c) {
+      $('mesNombre').textContent = c.nombre;
+      $('mesAnt').disabled = !c.hayAnterior;
+      $('mesSig').disabled = c.esActual;
+      const max = Math.max(1, ...c.items.map(i => i.monto));
+      $('cats').replaceChildren(...(c.items.length ? c.items.map(i => {
+        const barra = el('div', { className: 'barra' }, el('i'));
+        barra.firstChild.style.width = (i.monto / max * 100).toFixed(1) + '%';
+        const pct = c.total ? Math.round(i.monto / c.total * 100) + ' %' : '';
+        return el('li', {},
+          el('div', { className: 'arriba' },
+            el('div', {}, el('div', { className: 'nom', textContent: i.categoria }), el('div', { className: 'det', textContent: pct })),
+            el('div', { className: 'm', textContent: dinero.format(i.monto) })),
+          barra);
+      }) : [el('li', { className: 'det', textContent: 'Sin gastos en este mes.' })]));
+      $('catTotal').textContent = c.items.length
+        ? 'Total: ' + dinero.format(c.total) + (c.reembolsos ? ' · Te regresaron ' + dinero.format(c.reembolsos) : '')
+        : '';
+    }
+
+    function filaMovimiento(m) {
+      const li = el('li', { className: 'toca' },
+        el('div', {},
+          el('div', { className: 'nom', textContent: m.comercio || m.categoria }),
+          el('div', { className: 'det', textContent: m.fecha + ' · ' + m.categoria })),
+        el('div', { className: 'm ' + m.tipo, textContent: (m.tipo === 'gasto' ? '' : '+') + dinero.format(m.monto) }));
+      li.addEventListener('click', () => editarMovimiento(m));
+      return li;
+    }
+
+    function filaPendiente(m) {
+      const sel = selector('¿Qué categoría es?');
+      const b = el('button', { textContent: 'Guardar' });
+      const abajo = el('form', { className: 'abajo' }, sel, b);
+      abajo.addEventListener('submit', ev => {
+        ev.preventDefault();
+        if (!sel.valor()) return alert('Elige una categoría');
+        b.disabled = true;
+        api({ accion: 'categorizar', fila: m.fila, categoria: sel.valor() })
+          .then(render).catch(e => { b.disabled = false; error(e); });
+      });
+      return el('li', { className: 'pend' },
+        el('div', { className: 'arriba' },
+          el('div', {}, el('div', { className: 'nom', textContent: m.comercio || '(sin comercio)' }), el('div', { className: 'det', textContent: m.fecha })),
+          el('div', { className: 'm', textContent: dinero.format(m.monto) })),
+        abajo);
+    }
+
+    function filaRegla(r) {
+      const li = el('li', { className: 'toca' },
+        el('div', { className: 'nom', textContent: r.contiene }),
+        el('div', { className: 'det', textContent: '→ ' + r.categoria }));
+      li.addEventListener('click', () => editarRegla(r));
+      return li;
+    }
+
+    let selMano;
+    let tipoMano = 'gasto';
+    function render(d) {
+      MES = d.cat.mes;
+      CATS = d.categorias;
+      renderPresupuesto(d.pres);
+      $('mes').textContent = dinero.format(d.tot.mes);
+      $('hoy').textContent = dinero.format(d.tot.hoy);
+      $('semana').textContent = dinero.format(d.tot.semana);
+      $('ingresos').textContent = d.tot.ingresosMes ? 'Ingresos del mes: ' + dinero.format(d.tot.ingresosMes) : '';
+
+      const nuevo = selector('Categoría: automática');
+      nuevo.hidden = tipoMano !== 'gasto';
+      (selMano || $('catMano')).replaceWith(nuevo);
+      selMano = nuevo;
+
+      $('pend').hidden = !d.porClasificar.length;
+      $('pendientes').replaceChildren(...d.porClasificar.map(filaPendiente));
+      renderCategorias(d.cat);
+      $('lista').replaceChildren(...(d.ultimos.length ? d.ultimos.map(filaMovimiento)
+        : [el('li', { className: 'det', textContent: 'Aún no hay movimientos.' })]));
+      $('reglas').replaceChildren(...d.reglas.map(filaRegla));
+      $('renDe').replaceChildren(...CATS.map(c => el('option', { value: c, textContent: c })));
+    }
+
+    // ---------- Panel de edición ----------
+
+    function abrirPanel(...contenido) {
+      $('panel').replaceChildren(...contenido);
+      $('velo').hidden = false;
+    }
+    function cerrarPanel() { $('velo').hidden = true; }
+    $('velo').addEventListener('click', ev => { if (ev.target === $('velo')) cerrarPanel(); });
+
+    // Ejecuta una acción del panel: bloquea botones, manda, repinta y cierra.
+    function accionPanel(botones, cuerpo) {
+      botones.forEach(b => b.disabled = true);
+      api(cuerpo).then(d => { render(d); cerrarPanel(); })
+        .catch(e => { botones.forEach(b => b.disabled = false); error(e); });
+    }
+
+    function editarMovimiento(m) {
+      let tipo = m.tipo;
+      const tipos = el('div', { className: 'seg' });
+      const monto = el('input', { inputMode: 'decimal', value: m.monto, placeholder: 'Monto', required: true });
+      const concepto = el('input', { value: m.comercio, placeholder: 'Concepto' });
+      const cat = selector('Categoría: automática', m.categoria);
+      cat.hidden = tipo !== 'gasto';
+      botonesTipo(tipos, 'tipoEd', tipo, v => { tipo = v; cat.hidden = v !== 'gasto'; });
+      const guardar = el('button', { textContent: 'Guardar' });
+      const borrar = el('button', { type: 'button', className: 'peligro', textContent: 'Borrar' });
+      const cancelar = el('button', { type: 'button', className: 'sec', textContent: 'Cancelar' });
+      const form = el('form', {}, tipos, monto, concepto, cat, guardar, el('div', { className: 'acciones' }, cancelar, borrar));
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        accionPanel([guardar, borrar], { accion: 'editar', fila: m.fila, id: m.id, tipo,
+          monto: monto.value, comercio: concepto.value, categoria: tipo === 'gasto' ? cat.valor() : '' });
+      });
+      borrar.addEventListener('click', () => {
+        if (!confirm('¿Borrar "' + (m.comercio || m.categoria) + '" de ' + dinero.format(m.monto) + '?')) return;
+        accionPanel([guardar, borrar], { accion: 'borrar', fila: m.fila, id: m.id });
+      });
+      cancelar.addEventListener('click', cerrarPanel);
+      abrirPanel(el('h3', { textContent: 'Editar movimiento' }),
+        el('p', { className: 'det', textContent: m.fecha + (m.tarjeta ? ' · ' + m.tarjeta : '') }), form);
+    }
+
+    function editarRegla(r) {
+      r = r || {};
+      const contiene = el('input', { value: r.contiene || '', placeholder: 'El comercio contiene… (ej. TAQUERIA)', required: true });
+      const cat = selector('Categoría', r.categoria);
+      const guardar = el('button', { textContent: 'Guardar' });
+      const borrar = el('button', { type: 'button', className: 'peligro', textContent: 'Borrar regla', hidden: !r.fila });
+      const cancelar = el('button', { type: 'button', className: 'sec', textContent: 'Cancelar' });
+      const form = el('form', {}, contiene, cat, guardar, el('div', { className: 'acciones' }, cancelar, borrar));
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        if (!cat.valor()) return alert('Elige una categoría');
+        accionPanel([guardar, borrar], { accion: 'regla', fila: r.fila, contiene: contiene.value, categoria: cat.valor() });
+      });
+      borrar.addEventListener('click', () => {
+        if (!confirm('¿Borrar la regla ' + r.contiene + ' → ' + r.categoria + '?')) return;
+        accionPanel([guardar, borrar], { accion: 'borrarRegla', fila: r.fila, contiene: r.contiene });
+      });
+      cancelar.addEventListener('click', cerrarPanel);
+      abrirPanel(el('h3', { textContent: r.fila ? 'Editar regla' : 'Nueva regla' }),
+        el('p', { className: 'det', textContent: 'Los pendientes que coincidan se clasifican solos.' }), form);
+    }
+
+    // ---------- Formularios ----------
+
+    botonesTipo($('tipos'), 'tipo', tipoMano, v => {
+      tipoMano = v;
+      selMano.hidden = v !== 'gasto';
+      $('concepto').placeholder = TIPOS.find(t => t[0] === v)[2];
+    });
+
+    $('f').addEventListener('submit', ev => {
+      ev.preventDefault();
+      $('btn').disabled = true;
+      api({ tipo: tipoMano, monto: $('monto').value, comercio: $('concepto').value,
+            categoria: tipoMano === 'gasto' ? selMano.valor() : '', origen: 'manual' })
+        .then(d => { render(d); $('monto').value = $('concepto').value = ''; })
+        .catch(error)
+        .finally(() => { $('btn').disabled = false; });
+    });
+
+    $('nuevaRegla').addEventListener('submit', ev => { ev.preventDefault(); editarRegla(); });
+
+    $('fRen').addEventListener('submit', ev => {
+      ev.preventDefault();
+      const de = $('renDe').value, a = $('renA').value.trim();
+      if (!confirm('¿Renombrar "' + de + '" a "' + a + '" en todas las reglas y movimientos?')) return;
+      api({ accion: 'renombrar', de, a }).then(d => { render(d); $('renA').value = ''; }).catch(error);
+    });
+
+    // Navegación de meses en "Por categoría".
+    function moverMes(delta) {
+      const [a, m] = MES.split('-').map(Number);
+      const f = new Date(a, m - 1 + delta, 1);
+      MES = f.getFullYear() + '-' + String(f.getMonth() + 1).padStart(2, '0');
+      api({ accion: 'datos' }).then(render).catch(error);
+    }
+    $('mesAnt').addEventListener('click', () => moverMes(-1));
+    $('mesSig').addEventListener('click', () => moverMes(1));
+
+    api({ accion: 'datos' }).then(render).catch(e => {
+      $('lista').replaceChildren(el('li', { className: 'det', textContent: e.message }));
+      error(e);
+    });
+  </script>
+</body>
+</html>
