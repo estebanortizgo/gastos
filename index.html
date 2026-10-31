@@ -107,7 +107,7 @@
               padding:6px 0 calc(env(safe-area-inset-bottom) + 4px); background:var(--barra);
               backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
               border-top:.5px solid var(--linea); }
-    .tabbar button { background:none; color:var(--sub); width:auto; padding:4px 18px; font-size:10px; font-weight:500;
+    .tabbar button { background:none; color:var(--sub); width:auto; padding:4px 10px; font-size:10px; font-weight:500;
                      display:flex; flex-direction:column; align-items:center; gap:3px; }
     .tabbar button i { font-style:normal; font-size:22px; line-height:1; }
     .tabbar button.activo { color:var(--acc); }
@@ -153,21 +153,26 @@
         <small id="presDet"></small>
       </div>
 
-      <ul style="margin-top:28px">
-        <li id="cFijos"><div><div class="nom">Fijos</div><div class="det" id="fijosDet"></div></div><span class="m" id="fijos">—</span></li>
-        <li id="cAhorro" class="toca"><div><div class="nom">Ahorro</div><div class="det" id="ahorroDet"></div></div><div class="derecha chev"><span class="m" id="ahorro">••••••</span></div></li>
-      </ul>
-
       <div class="resumen">
         <div>Hoy<b id="hoy">—</b></div>
         <div>Semana<b id="semana">—</b></div>
         <div style="text-align:right">Este mes<b id="mes">—</b></div>
       </div>
-      <p class="sub" id="ingresos" style="margin:12px 4px 0"></p>
 
       <button class="aviso" id="pend" hidden><span id="pendTexto"></span><span class="chev"></span></button>
 
       <div id="lista"></div>
+    </section>
+
+    <!-- Cuentas: Fijos y Ahorro (se consultan de vez en cuando) -->
+    <section id="tabCuentas" hidden>
+      <h1>Cuentas</h1>
+      <ul>
+        <li id="cFijos"><div><div class="nom">Fijos</div><div class="det" id="fijosDet"></div></div><span class="m" id="fijos">—</span></li>
+        <li id="cAhorro" class="toca"><div><div class="nom">Ahorro</div><div class="det" id="ahorroDet"></div></div><div class="derecha chev"><span class="m" id="ahorro">••••••</span></div></li>
+      </ul>
+      <p class="nota">Para meter dinero a Fijos o al Ahorro usa + → 💰 Llegó dinero. Para sacar del ahorro, toca Ahorro.</p>
+      <p class="sub" id="ingresos" style="margin-top:20px"></p>
     </section>
 
     <!-- Categorías -->
@@ -206,6 +211,7 @@
   <nav class="tabbar" id="tabbar" hidden>
     <button data-tab="Inicio" class="activo"><i>◉</i>Inicio</button>
     <button data-tab="Categorias"><i>◔</i>Categorías</button>
+    <button data-tab="Cuentas"><i>◫</i>Cuentas</button>
     <button data-tab="Ajustes"><i>⚙︎</i>Ajustes</button>
   </nav>
 
@@ -471,7 +477,7 @@
     // ---------- Pestañas ----------
 
     function irA(tab) {
-      ['Inicio', 'Categorias', 'Ajustes'].forEach(t => { $('tab' + t).hidden = t !== tab; });
+      ['Inicio', 'Categorias', 'Cuentas', 'Ajustes'].forEach(t => { $('tab' + t).hidden = t !== tab; });
       document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
       $('fab').hidden = tab === 'Ajustes';
       window.scrollTo(0, 0);
@@ -855,7 +861,7 @@
     // ---------- Actualización automática ----------
     // GitHub Pages deja la página en caché 10 min. Al abrir, se compara con version.txt (sin caché);
     // si hay versión nueva, se refresca la copia guardada y se recarga una sola vez.
-    const VERSION = '2026-10-30-4';
+    const VERSION = '2026-10-30-5';
     async function revisarVersion() {
       try {
         const v = (await (await fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })).text()).trim();
