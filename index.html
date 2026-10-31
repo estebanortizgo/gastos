@@ -109,10 +109,24 @@
     .panel .acciones { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
     .pin { letter-spacing:12px; text-align:center; font-size:24px; }
     .pin::placeholder { letter-spacing:normal; font-size:16px; }
+    /* Candado */
+    #candado { min-height:80vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; }
+    #candado .icono { font-size:64px; }
+    #candado h1 { margin:0; }
+    #candado button { max-width:320px; }
+    #candado p { color:var(--sub); max-width:320px; margin:0; }
     .saldoAh { font-size:40px; font-weight:700; text-align:center; margin:12px 0 4px; font-variant-numeric:tabular-nums; }
   </style>
 </head>
 <body>
+  <section id="candado">
+    <div class="icono">🔒</div>
+    <h1>Gastos</h1>
+    <button id="btnEntrar" hidden>Entrar con Face ID</button>
+    <p id="candadoMsg">Cargando…</p>
+  </section>
+
+  <main id="app" hidden>
   <h1>Mis gastos</h1>
 
   <div class="card pres" id="pres">
@@ -197,27 +211,38 @@
     </form>
   </details>
 
+  </main>
+
   <div class="velo" id="velo" hidden><div class="panel" id="panel"></div></div>
 
   <script>
     // Página estática (GitHub Pages): los datos viven en la hoja de Google y se piden al script.
-    // El token va después de "#", así que el navegador nunca lo manda a GitHub.
+    // Para entrar se usa Face ID (passkey). El token del enlace (#k=…) solo sirve la primera vez,
+    // para dar de alta Face ID; después se borra del enlace y del teléfono.
     const URL_APP = 'https://script.google.com/macros/s/AKfycbzXfEPuWonfambkwxvt16c8ViCc8voGutpAYxmNtBNcofR336NrgrOF-hjcrZ4ACxhrvQ/exec';
-    const deHash = new URLSearchParams(location.hash.slice(1)).get('k');
-    if (deHash) localStorage.setItem('k', deHash);
-    const K = deHash || localStorage.getItem('k');
+    let K = new URLSearchParams(location.hash.slice(1)).get('k') || localStorage.getItem('k');
+    let SES = null;    // sesión de Face ID: solo en memoria, se borra al salir de la app
     let MES = null;    // mes que se ve en "Por categoría" (null = el actual)
     let PIN = null;    // solo en memoria; se borra al salir de la app
     let CATS = [];
     let ULTIMO = null; // últimos datos
 
+    // Petición sin sesión (solo para Face ID).
+    async function api0(cuerpo) {
+      const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify(cuerpo) });
+      const j = await r.json();
+      if (!j.ok) throw new Error(String(j.error).replace(/^Error: /, ''));
+      return j;
+    }
+
     async function api(cuerpo) {
-      if (!K) throw new Error('Falta el token. Abre la app desde el enlace de la hoja (Config → B3).');
-      const base = { k: K, app: true, mes: MES };
+      if (!SES) { bloquear(); throw new Error('Entra con Face ID.'); }
+      const base = { s: SES, app: true, mes: MES };
       if (PIN) base.pin = PIN;
       const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify(Object.assign(base, cuerpo)) });
       const j = await r.json();
       if (!j.ok) {
+        if (/Sesión vencida/.test(j.error)) { bloquear(); prepararCandado(true); }
         if (/PIN|intentos/.test(j.error)) PIN = null;
         throw new Error(String(j.error).replace(/^Error: /, ''));
       }
@@ -499,8 +524,6 @@
         render(ULTIMO);
       }
     }
-    // Se vuelve a ocultar en cuanto sales de la app.
-    document.addEventListener('visibilitychange', () => { if (document.hidden && PIN) ocultarAhorro(); });
 
     $('cAhorro').addEventListener('click', () => ULTIMO.cuentas.ahorro.visible ? panelAhorro() : pedirPin(panelAhorro));
 
@@ -638,10 +661,118 @@
     $('mesAnt').addEventListener('click', () => moverMes(-1));
     $('mesSig').addEventListener('click', () => moverMes(1));
 
-    api({ accion: 'datos' }).then(render).catch(e => {
-      $('lista').replaceChildren(el('li', { className: 'det', textContent: e.message }));
-      error(e);
+    // ---------- Candado: Face ID ----------
+
+    const aB64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const deB64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+    let OPC = null; // opciones de Face ID (reto de un solo uso)
+
+    function candadoMsg(t) { $('candadoMsg').textContent = t; }
+
+    function olvidarToken() {
+      K = null;
+      localStorage.removeItem('k');
+      if (location.hash) history.replaceState(null, '', location.pathname);
+    }
+
+    // Bloquea: borra sesión y PIN de la memoria y esconde todo.
+    function bloquear() {
+      if (SES) fetch(URL_APP, { method: 'POST', keepalive: true, body: JSON.stringify({ accion: 'salir', s: SES }) }).catch(() => {});
+      SES = null;
+      PIN = null;
+      ULTIMO = null;
+      cerrarPanel();
+      $('app').hidden = true;
+      $('candado').hidden = false;
+      $('btnEntrar').hidden = true;
+      candadoMsg('Bloqueado');
+      ['lista', 'pendientes', 'cats', 'reglas'].forEach(id => $(id).replaceChildren());
+    }
+
+    function abrir(j) {
+      SES = j.s;
+      render(j.datos);
+      $('candado').hidden = true;
+      $('app').hidden = false;
+      window.scrollTo(0, 0);
+    }
+
+    async function prepararCandado(auto) {
+      const b = $('btnEntrar');
+      b.hidden = true;
+      candadoMsg('Cargando…');
+      try { OPC = await api0({ accion: 'pkOpciones' }); } catch (e) { candadoMsg(e.message); return; }
+      if (OPC.registrado) {
+        olvidarToken(); // con Face ID configurado, el token ya no se necesita en este teléfono
+        b.textContent = 'Entrar con Face ID';
+        b.onclick = entrar;
+        b.hidden = false;
+        candadoMsg('');
+        if (auto) entrar();
+      } else if (K) {
+        localStorage.setItem('k', K);
+        b.textContent = 'Configurar Face ID';
+        b.onclick = registrarFaceId;
+        b.hidden = false;
+        candadoMsg('Primera vez: vas a dar de alta Face ID en este iPhone. Después ya no se necesita el enlace con el token.');
+      } else {
+        candadoMsg('Face ID no está configurado. Abre la app una vez desde el enlace de tu hoja (Config → B3).');
+      }
+    }
+
+    async function entrar() {
+      const b = $('btnEntrar');
+      b.disabled = true;
+      candadoMsg('');
+      try {
+        if (!OPC || !OPC.reto) OPC = await api0({ accion: 'pkOpciones' });
+        const cred = await navigator.credentials.get({ publicKey: {
+          challenge: deB64u(OPC.reto), rpId: location.hostname, userVerification: 'required', timeout: 60000,
+          allowCredentials: OPC.ids.map(id => ({ type: 'public-key', id: deB64u(id) })) } });
+        OPC = null;
+        const r = cred.response;
+        abrir(await api0({ accion: 'pkEntrar', id: aB64u(cred.rawId), clientData: aB64u(r.clientDataJSON),
+                           authData: aB64u(r.authenticatorData), firma: aB64u(r.signature) }));
+      } catch (e) {
+        OPC = null;
+        candadoMsg(e.name === 'NotAllowedError' ? 'Toca el botón para entrar con Face ID.' : e.message);
+      } finally {
+        b.disabled = false;
+      }
+    }
+
+    async function registrarFaceId() {
+      const b = $('btnEntrar');
+      b.disabled = true;
+      try {
+        const o = await api0({ accion: 'pkRegistroOpciones', k: K });
+        const cred = await navigator.credentials.create({ publicKey: {
+          challenge: deB64u(o.reto), rp: { id: location.hostname, name: 'Gastos' },
+          user: { id: deB64u(o.usuarioId), name: 'Esteban', displayName: 'Esteban' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+          attestation: 'none', timeout: 60000,
+          excludeCredentials: o.ids.map(id => ({ type: 'public-key', id: deB64u(id) })) } });
+        const r = cred.response;
+        const j = await api0({ accion: 'pkRegistrar', k: K, id: aB64u(cred.rawId), clientData: aB64u(r.clientDataJSON),
+                               authData: aB64u(r.getAuthenticatorData()), publicKey: aB64u(r.getPublicKey()), alg: r.getPublicKeyAlgorithm() });
+        olvidarToken();
+        abrir(j);
+        alert('✅ Face ID configurado. Desde ahora entras solo con tu cara.\n\nRecomendado: borra el ícono de la app y vuelve a agregarla a inicio desde aquí, para que el enlace guardado ya no tenga el token.');
+      } catch (e) {
+        candadoMsg(e.name === 'NotAllowedError' ? 'Cancelado. Toca "Configurar Face ID" para intentar de nuevo.' : e.message);
+      } finally {
+        b.disabled = false;
+      }
+    }
+
+    // Se bloquea en cuanto sales de la app; al volver pide Face ID otra vez.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (SES) bloquear(); }
+      else if (!SES) prepararCandado(true);
     });
+
+    prepararCandado(true);
   </script>
 </body>
 </html>
