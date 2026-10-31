@@ -13,109 +13,126 @@
   <link rel="apple-touch-icon" href="icono-180.png">
   <link rel="icon" href="icono-180.png">
   <style>
-    :root { --bg:#f2f2f7; --card:#fff; --txt:#1c1c1e; --sub:#6e6e73; --acc:#0071e3; --ing:#1a7f37;
-            --linea:#e5e5ea; --warn:#b25000; --bad:#d70015; --fijo:#8944ab; --velo:rgba(0,0,0,.35); }
+    :root { --bg:#f2f2f7; --card:#fff; --txt:#1c1c1e; --sub:#8e8e93; --acc:#007aff; --ing:#248a3d;
+            --linea:rgba(60,60,67,.13); --relleno:rgba(118,118,128,.12); --warn:#c93400; --bad:#d70015;
+            --fijo:#8944ab; --velo:rgba(0,0,0,.25); --barra:rgba(249,249,249,.88); --seg:#fff; }
     @media (prefers-color-scheme: dark) {
-      :root { --bg:#000; --card:#1c1c1e; --txt:#f5f5f7; --sub:#98989d; --acc:#0a84ff; --ing:#30d158;
-              --linea:#2c2c2e; --warn:#ffb340; --bad:#ff6961; --fijo:#da8fff; --velo:rgba(0,0,0,.6); }
+      :root { --bg:#000; --card:#1c1c1e; --txt:#f5f5f7; --sub:#8e8e93; --acc:#0a84ff; --ing:#30d158;
+              --linea:rgba(84,84,88,.4); --relleno:rgba(118,118,128,.24); --warn:#ff9f0a; --bad:#ff453a;
+              --fijo:#bf5af2; --velo:rgba(0,0,0,.55); --barra:rgba(22,22,24,.88); --seg:#636366; }
     }
-    * { box-sizing:border-box; }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     [hidden] { display:none !important; }
-    body { margin:0; padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 40px);
-           background:var(--bg); color:var(--txt); font:16px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
-    h1 { font-size:28px; margin:0 0 16px; }
-    h2 { font-size:18px; margin:24px 0 8px; }
-    .card { background:var(--card); border-radius:14px; padding:14px 16px; }
-    .card span { display:block; color:var(--sub); font-size:13px; }
-    .card b { font-size:22px; font-variant-numeric:tabular-nums; }
-    .card small { color:var(--sub); font-size:12px; }
-    .grande b { font-size:28px; }
-    .fila { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-    .sub { color:var(--sub); font-size:14px; margin:10px 2px 0; }
-    form { display:grid; gap:8px; margin-top:8px; }
-    label.campo { display:grid; gap:4px; font-size:13px; color:var(--sub); }
-    input, select, button { font:inherit; padding:12px; border-radius:10px; border:1px solid var(--linea);
-                            background:var(--card); color:var(--txt); width:100%; }
-    select { appearance:none; -webkit-appearance:none; }
-    .selcat { display:grid; gap:8px; }
-    button { background:var(--acc); color:#fff; border:0; font-weight:600; }
-    button:disabled { opacity:.5; }
-    button.sec { background:var(--linea); color:var(--txt); }
-    button.peligro { background:transparent; color:var(--bad); border:1px solid var(--bad); }
-    .seg { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
-    .seg label { text-align:center; padding:10px 4px; border-radius:10px; background:var(--card);
-                 border:1px solid var(--linea); font-size:14px; }
-    .seg input { display:none; }
-    .seg label:has(input:checked) { border-color:var(--acc); color:var(--acc); font-weight:600; }
-    ul { list-style:none; margin:0; padding:0; background:var(--card); border-radius:14px; }
-    li { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px;
-         border-bottom:1px solid var(--linea); }
-    li:last-child { border-bottom:0; }
-    li.toca, .toca { cursor:pointer; }
-    li.toca:active, .card.toca:active { background:var(--linea); }
-    .nom { font-weight:500; }
-    .det { color:var(--sub); font-size:13px; }
-    .m { font-variant-numeric:tabular-nums; white-space:nowrap; }
+    body { margin:0; padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 110px);
+           background:var(--bg); color:var(--txt); font:17px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+           -webkit-font-smoothing:antialiased; }
+    h1 { font-size:34px; font-weight:700; letter-spacing:-.02em; margin:4px 0 20px; }
+    .etq { font-size:13px; color:var(--sub); text-transform:uppercase; letter-spacing:.03em; margin:28px 16px 8px; }
+    .sub, .nota { color:var(--sub); font-size:13px; margin:8px 16px 0; line-height:1.35; }
+
+    /* Listas agrupadas (estilo Ajustes de iOS) */
+    ul { list-style:none; margin:0; padding:0; background:var(--card); border-radius:12px; overflow:hidden; }
+    li { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; position:relative; min-height:48px; }
+    li + li::before { content:''; position:absolute; top:0; left:16px; right:0; border-top:.5px solid var(--linea); }
+    li.toca { cursor:pointer; }
+    li.toca:active { background:var(--relleno); }
+    .nom { font-size:16px; }
+    .det { color:var(--sub); font-size:13px; margin-top:2px; }
+    .m { font-variant-numeric:tabular-nums; white-space:nowrap; font-size:16px; }
     .m.ingreso, .m.reembolso { color:var(--ing); }
     .m.presupuesto { color:var(--acc); }
     .m.fijos { color:var(--fijo); }
     .m.ahorro, .m.retiro { color:var(--sub); }
-    .chip { display:inline-block; font-size:11px; padding:1px 6px; border-radius:6px; background:var(--linea); color:var(--fijo); margin-left:4px; }
-    .pend { display:block; }
-    .pend .arriba { display:flex; justify-content:space-between; gap:12px; }
-    .pend .abajo { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:8px; }
-    .pend .abajo button { width:auto; padding:10px 14px; }
-    .pend input, .pend select { padding:10px; }
+    .chev::after { content:'›'; color:var(--sub); font-size:22px; margin-left:8px; line-height:1; }
+    .derecha { display:flex; align-items:center; }
+    .chip { display:inline-block; font-size:11px; padding:1px 6px; border-radius:5px; background:var(--relleno); color:var(--fijo); margin-left:6px; vertical-align:2px; }
+
     /* Para gastar */
-    .pres b { font-size:40px; }
-    .pres.warn b { color:var(--warn); }
-    .pres.bad b { color:var(--bad); }
-    .barra { height:8px; background:var(--linea); border-radius:4px; overflow:hidden; margin:10px 0 6px; }
-    .barra i { display:block; height:100%; width:0; background:var(--acc); border-radius:4px; transition:width .3s; }
-    .pres.warn .barra i { background:var(--warn); }
-    .pres.bad .barra i { background:var(--bad); }
-    .pres small { font-size:13px; }
-    #cFijos b { color:var(--fijo); }
-    #cFijos.bad b { color:var(--bad); }
-    /* Reparto */
+    .hero { padding:4px 4px 0; }
+    .hero .etq { margin:0 0 2px; }
+    .hero b { display:block; font-size:56px; font-weight:700; letter-spacing:-.035em; font-variant-numeric:tabular-nums; line-height:1.1; }
+    .hero.warn b { color:var(--warn); }
+    .hero.bad b { color:var(--bad); }
+    .barra { height:4px; background:var(--relleno); border-radius:2px; overflow:hidden; margin:16px 0 8px; }
+    .barra i { display:block; height:100%; width:0; background:var(--acc); border-radius:2px; transition:width .4s; }
+    .hero.warn .barra i { background:var(--warn); }
+    .hero.bad .barra i { background:var(--bad); }
+    .hero small { color:var(--sub); font-size:14px; }
+    #cFijos .m { color:var(--fijo); }
+    #cFijos.bad .m { color:var(--bad); }
+    .resumen { display:flex; justify-content:space-between; margin:20px 4px 0; font-size:14px; color:var(--sub); }
+    .resumen b { display:block; color:var(--txt); font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:2px; }
+    .aviso { display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:20px;
+             background:var(--card); color:var(--warn); font-weight:500; font-size:15px; }
+
+    /* Formularios */
+    form { display:grid; gap:10px; }
+    label.campo { display:grid; gap:6px; font-size:13px; color:var(--sub); }
+    input, select, button { font:inherit; font-size:17px; padding:13px 14px; border-radius:12px; border:0;
+                            background:var(--card); color:var(--txt); width:100%; }
+    input::placeholder { color:var(--sub); }
+    select { appearance:none; -webkit-appearance:none; }
+    .selcat { display:grid; gap:10px; }
+    button { background:var(--acc); color:#fff; font-weight:600; cursor:pointer; }
+    button:disabled { opacity:.45; }
+    button.sec { background:var(--card); color:var(--acc); font-weight:500; }
+    button.peligro { background:var(--card); color:var(--bad); font-weight:500; }
+    .seg { display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; background:var(--relleno); padding:2px; border-radius:9px; }
+    .seg label { text-align:center; padding:7px 4px; border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; }
+    .seg input { display:none; }
+    .seg label:has(input:checked) { background:var(--seg); box-shadow:0 1px 3px rgba(0,0,0,.12); }
     .reparto { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-    .falta { font-size:14px; font-weight:600; }
+    .falta { font-size:14px; font-weight:500; color:var(--sub); }
     .falta.okk { color:var(--ing); }
     .falta.mal { color:var(--bad); }
-    /* Por categoría */
-    .nav { display:flex; align-items:center; justify-content:space-between; margin:24px 0 8px; }
-    .nav h2 { margin:0; }
-    .nav div { display:flex; align-items:center; gap:6px; }
-    .nav button { width:36px; height:36px; padding:0; border-radius:18px; background:var(--card); color:var(--acc); font-size:20px; }
-    .nav button:disabled { color:var(--sub); }
-    .nav small { color:var(--sub); font-size:14px; min-width:110px; text-align:center; }
+    .pend { display:block; }
+    .pend .arriba { display:flex; justify-content:space-between; gap:12px; }
+    .pend .abajo { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:10px; }
+    .pend .abajo button { width:auto; padding:10px 16px; }
+    .pend select, .pend input { background:var(--bg); padding:10px 12px; }
+
+    /* Categorías */
+    .mesnav { display:flex; align-items:center; justify-content:center; gap:16px; margin:-8px 0 16px; }
+    .mesnav span { font-size:15px; font-weight:500; min-width:130px; text-align:center; text-transform:capitalize; }
+    .mesnav button { width:34px; height:34px; padding:0; border-radius:17px; background:var(--card); color:var(--acc); font-size:20px; line-height:1; }
+    .mesnav button:disabled { color:var(--sub); opacity:.4; }
     .cat li { display:block; }
     .cat .arriba { display:flex; justify-content:space-between; gap:12px; }
-    .cat .barra { margin:8px 0 0; height:6px; }
-    /* Reglas */
-    details { margin-top:24px; }
-    summary { font-size:18px; font-weight:700; cursor:pointer; list-style:none; }
-    summary::-webkit-details-marker { display:none; }
-    summary::after { content:' ›'; color:var(--sub); }
-    details[open] summary::after { content:' ⌄'; }
-    .checks li { padding:10px 16px; }
-    .checks input { width:auto; }
-    /* Panel */
+    .cat .barra { margin:8px 0 0; }
+    .checks label { display:flex; justify-content:space-between; align-items:center; width:100%; font-size:16px; }
+    .checks input { width:22px; height:22px; accent-color:var(--fijo); }
+
+    /* Barra de pestañas y botón + */
+    .tabbar { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; z-index:5;
+              padding:6px 0 calc(env(safe-area-inset-bottom) + 4px); background:var(--barra);
+              backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+              border-top:.5px solid var(--linea); }
+    .tabbar button { background:none; color:var(--sub); width:auto; padding:4px 18px; font-size:10px; font-weight:500;
+                     display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .tabbar button i { font-style:normal; font-size:22px; line-height:1; }
+    .tabbar button.activo { color:var(--acc); }
+    .fab { position:fixed; right:20px; bottom:calc(env(safe-area-inset-bottom) + 70px); z-index:6; width:56px; height:56px;
+           padding:0; border-radius:28px; font-size:30px; font-weight:400; line-height:1; box-shadow:0 8px 24px rgba(0,122,255,.35); }
+
+    /* Panel inferior */
     .velo { position:fixed; inset:0; background:var(--velo); display:flex; align-items:flex-end; z-index:10; }
-    .velo[hidden] { display:none; }
-    .panel { background:var(--bg); width:100%; max-height:90vh; overflow:auto; border-radius:16px 16px 0 0;
-             padding:18px 16px calc(env(safe-area-inset-bottom) + 24px); }
-    .panel h3 { margin:0 0 4px; font-size:20px; }
-    .panel .acciones { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
-    .pin { letter-spacing:12px; text-align:center; font-size:24px; }
-    .pin::placeholder { letter-spacing:normal; font-size:16px; }
+    .panel { background:var(--bg); width:100%; max-height:92vh; overflow:auto; border-radius:14px 14px 0 0;
+             padding:8px 20px calc(env(safe-area-inset-bottom) + 24px); }
+    .panel::before { content:''; display:block; width:36px; height:5px; border-radius:3px; background:var(--relleno); margin:0 auto 14px; }
+    .panel h3 { margin:0 0 4px; font-size:22px; font-weight:700; }
+    .panel > .det { margin:0 0 16px; }
+    .panel ul { margin-bottom:8px; }
+    .panel .acciones { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .pin { letter-spacing:14px; text-align:center; font-size:26px; }
+    .pin::placeholder { letter-spacing:normal; font-size:17px; }
+    .saldoAh { font-size:48px; font-weight:700; letter-spacing:-.03em; text-align:center; margin:16px 0 4px; font-variant-numeric:tabular-nums; }
+
     /* Candado */
-    #candado { min-height:80vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; }
-    #candado .icono { font-size:64px; }
+    #candado { min-height:80vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px; }
+    #candado .icono { font-size:56px; }
     #candado h1 { margin:0; }
-    #candado button { max-width:320px; }
-    #candado p { color:var(--sub); max-width:320px; margin:0; }
-    .saldoAh { font-size:40px; font-weight:700; text-align:center; margin:12px 0 4px; font-variant-numeric:tabular-nums; }
+    #candado button { max-width:300px; }
+    #candado p { color:var(--sub); max-width:300px; margin:0; font-size:15px; }
   </style>
 </head>
 <body>
@@ -127,91 +144,104 @@
   </section>
 
   <main id="app" hidden>
-  <h1>Mis gastos</h1>
-
-  <div class="card pres" id="pres">
-    <span id="presTitulo">Para gastar</span>
-    <b id="disp">—</b>
-    <div class="barra"><i id="barra"></i></div>
-    <small id="presDet"></small>
-  </div>
-  <div class="fila">
-    <div class="card" id="cFijos"><span>Fijos</span><b id="fijos">—</b><br><small id="fijosDet"></small></div>
-    <div class="card toca" id="cAhorro"><span>Ahorro 🔒</span><b id="ahorro">••••••</b><br><small id="ahorroDet">Toca para ver</small></div>
-  </div>
-
-  <div class="fila">
-    <div class="card"><span>Gastado este mes</span><b id="mes">—</b></div>
-    <div class="card"><span>Hoy · semana</span><b id="hoy">—</b><br><small id="semana"></small></div>
-  </div>
-  <p class="sub" id="ingresos"></p>
-
-  <div id="pend" hidden>
-    <h2>Por clasificar</h2>
-    <ul id="pendientes"></ul>
-  </div>
-
-  <h2>Registrar</h2>
-  <form id="f">
-    <div class="seg" id="tipos"></div>
-
-    <div id="campoGasto" style="display:grid;gap:8px">
-      <input id="monto" inputmode="decimal" placeholder="Monto">
-      <input id="concepto" placeholder="Concepto (ej. tacos, cine)">
-      <div id="catMano"></div>
-      <select id="cuentaMano">
-        <option value="">Se paga de: automático (según categoría)</option>
-        <option value="gastar">Se paga de: Para gastar</option>
-        <option value="fijos">Se paga de: Fijos</option>
-      </select>
-    </div>
-
-    <div id="campoDeposito" style="display:none;gap:8px">
-      <label class="campo">¿Cuánto llegó?<input id="dTotal" inputmode="decimal" placeholder="3500"></label>
-      <div class="reparto">
-        <label class="campo">Para gastar<input id="dGastar" inputmode="decimal" placeholder="0"></label>
-        <label class="campo">Fijos<input id="dFijos" inputmode="decimal" placeholder="0"></label>
-        <label class="campo">Ahorro<input id="dAhorro" inputmode="decimal" placeholder="0"></label>
+    <!-- Inicio -->
+    <section id="tabInicio">
+      <div class="hero" id="pres">
+        <div class="etq" id="presTitulo">Para gastar</div>
+        <b id="disp">—</b>
+        <div class="barra"><i id="barra"></i></div>
+        <small id="presDet"></small>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-        <span class="falta" id="dFalta"></span>
-        <button type="button" class="sec" id="dResto" style="width:auto;padding:8px 12px">Resto → Ahorro</button>
+
+      <ul style="margin-top:28px">
+        <li id="cFijos"><div><div class="nom">Fijos</div><div class="det" id="fijosDet"></div></div><span class="m" id="fijos">—</span></li>
+        <li id="cAhorro" class="toca"><div><div class="nom">Ahorro</div><div class="det" id="ahorroDet"></div></div><div class="derecha chev"><span class="m" id="ahorro">••••••</span></div></li>
+      </ul>
+
+      <div class="resumen">
+        <div>Hoy<b id="hoy">—</b></div>
+        <div>Semana<b id="semana">—</b></div>
+        <div style="text-align:right">Este mes<b id="mes">—</b></div>
       </div>
-      <input id="dConcepto" placeholder="Concepto (ej. Quincena)">
-    </div>
+      <p class="sub" id="ingresos" style="margin:12px 4px 0"></p>
 
-    <button id="btn">Agregar</button>
-  </form>
+      <button class="aviso" id="pend" hidden><span id="pendTexto"></span><span class="chev"></span></button>
 
-  <div class="nav">
-    <h2>Por categoría</h2>
-    <div><button id="mesAnt" aria-label="Mes anterior">‹</button><small id="mesNombre"></small><button id="mesSig" aria-label="Mes siguiente">›</button></div>
-  </div>
-  <ul class="cat" id="cats"></ul>
-  <p class="sub" id="catTotal"></p>
+      <div id="lista"></div>
+    </section>
 
-  <h2>Últimos movimientos</h2>
-  <p class="sub" style="margin:-4px 2px 8px">Toca uno para editarlo o borrarlo.</p>
-  <ul id="lista"><li class="det">Cargando…</li></ul>
+    <!-- Categorías -->
+    <section id="tabCategorias" hidden>
+      <h1>Categorías</h1>
+      <div class="mesnav"><button id="mesAnt" aria-label="Mes anterior">‹</button><span id="mesNombre"></span><button id="mesSig" aria-label="Mes siguiente">›</button></div>
+      <ul class="cat" id="cats"></ul>
+      <p class="sub" id="catTotal"></p>
+    </section>
 
-  <details>
-    <summary>Categorías y reglas</summary>
-    <h2>Se pagan de Fijos</h2>
-    <p class="sub" style="margin-top:0">Los gastos de estas categorías salen de <b>Fijos</b>, no de lo que tienes para gastar.</p>
-    <ul class="checks" id="fijas" style="margin-top:8px"></ul>
-    <h2>Reglas</h2>
-    <p class="sub" style="margin-top:0">Si el comercio <b>contiene</b> el texto, el gasto va a esa categoría. Si varias coinciden, gana la más específica.</p>
-    <ul id="reglas" style="margin-top:8px"></ul>
-    <form id="nuevaRegla"><button type="submit" class="sec">➕ Nueva regla</button></form>
-    <h2>Renombrar categoría</h2>
-    <form id="fRen">
-      <select id="renDe"></select>
-      <input id="renA" placeholder="Nombre nuevo" required>
-      <button>Renombrar</button>
-    </form>
-  </details>
+    <!-- Ajustes -->
+    <section id="tabAjustes" hidden>
+      <h1>Ajustes</h1>
+      <div class="etq" style="margin-top:0">Se pagan de Fijos</div>
+      <ul class="checks" id="fijas"></ul>
+      <p class="nota">Los gastos de estas categorías salen de Fijos, no de lo que tienes para gastar.</p>
 
+      <div class="etq">Reglas</div>
+      <ul id="reglas"></ul>
+      <p class="nota">Si el comercio contiene el texto, el gasto va a esa categoría. Si varias coinciden, gana la más específica.</p>
+      <button class="sec" id="btnNuevaRegla" style="margin-top:12px">Nueva regla</button>
+
+      <div class="etq">Renombrar categoría</div>
+      <form id="fRen">
+        <select id="renDe"></select>
+        <input id="renA" placeholder="Nombre nuevo" required>
+        <button>Renombrar</button>
+      </form>
+
+      <div class="etq">Sesión</div>
+      <button class="sec" id="btnBloquear">Bloquear ahora</button>
+    </section>
   </main>
+
+  <button class="fab" id="fab" hidden aria-label="Registrar">+</button>
+  <nav class="tabbar" id="tabbar" hidden>
+    <button data-tab="Inicio" class="activo"><i>◉</i>Inicio</button>
+    <button data-tab="Categorias"><i>◔</i>Categorías</button>
+    <button data-tab="Ajustes"><i>⚙︎</i>Ajustes</button>
+  </nav>
+
+  <!-- El formulario vive aquí y se muestra dentro del panel al tocar + -->
+  <div id="almacen" hidden>
+    <form id="f">
+      <div class="seg" id="tipos"></div>
+
+      <div id="campoGasto" style="display:grid;gap:10px">
+        <input id="monto" inputmode="decimal" placeholder="Monto">
+        <input id="concepto" placeholder="Concepto (ej. tacos, cine)">
+        <div id="catMano"></div>
+        <select id="cuentaMano">
+          <option value="">Se paga de: automático</option>
+          <option value="gastar">Se paga de: Para gastar</option>
+          <option value="fijos">Se paga de: Fijos</option>
+        </select>
+      </div>
+
+      <div id="campoDeposito" style="display:none;gap:10px">
+        <label class="campo">¿Cuánto llegó?<input id="dTotal" inputmode="decimal" placeholder="3500"></label>
+        <div class="reparto">
+          <label class="campo">Para gastar<input id="dGastar" inputmode="decimal" placeholder="0"></label>
+          <label class="campo">Fijos<input id="dFijos" inputmode="decimal" placeholder="0"></label>
+          <label class="campo">Ahorro<input id="dAhorro" inputmode="decimal" placeholder="0"></label>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span class="falta" id="dFalta"></span>
+          <button type="button" class="sec" id="dResto" style="width:auto;padding:8px 12px;font-size:15px">Resto → Ahorro</button>
+        </div>
+        <input id="dConcepto" placeholder="Concepto (ej. Quincena)">
+      </div>
+
+      <button id="btn">Agregar</button>
+    </form>
+  </div>
 
   <div class="velo" id="velo" hidden><div class="panel" id="panel"></div></div>
 
@@ -339,7 +369,7 @@
       if (m.tipo === 'gasto' && m.cuenta === 'fijos') nombre.append(el('span', { className: 'chip', textContent: 'Fijos' }));
       const etiqueta = m.tipo === 'gasto' ? m.categoria : NOMBRE_TIPO[m.tipo] || m.categoria;
       const li = el('li', { className: 'toca' },
-        el('div', {}, nombre, el('div', { className: 'det', textContent: m.fecha + ' · ' + etiqueta })),
+        el('div', {}, nombre, el('div', { className: 'det', textContent: m.fecha.slice(6) + ' · ' + etiqueta })),
         el('div', { className: 'm ' + m.tipo, textContent: textoMonto(m) }));
       li.addEventListener('click', () => OCULTOS.includes(m.tipo) && !PIN
         ? pedirPin(() => { const n = ULTIMO.ultimos.find(x => x.id === m.id); if (n) editarMovimiento(n); })
@@ -356,7 +386,8 @@
         if (!sel.valor()) return alert('Elige una categoría');
         b.disabled = true;
         api({ accion: 'categorizar', fila: m.fila, categoria: sel.valor() })
-          .then(render).catch(e => { b.disabled = false; error(e); });
+          .then(d => { render(d); d.porClasificar.length ? abrirPendientes() : cerrarPanel(); })
+          .catch(e => { b.disabled = false; error(e); });
       });
       return el('li', { className: 'pend' },
         el('div', { className: 'arriba' },
@@ -380,7 +411,7 @@
         api({ accion: 'fijas', categorias: lista }).then(render).catch(e => { caja.checked = !caja.checked; error(e); });
       });
       caja.value = c;
-      return el('li', {}, el('label', { style: 'display:flex;gap:10px;align-items:center;width:100%' }, caja, c));
+      return el('li', {}, el('label', {}, c, caja));
     }
 
     let selMano;
@@ -392,31 +423,76 @@
       renderCuentas(d.cuentas);
       $('mes').textContent = dinero.format(d.tot.mes);
       $('hoy').textContent = dinero.format(d.tot.hoy);
-      $('semana').textContent = 'Semana: ' + dinero.format(d.tot.semana);
-      $('ingresos').textContent = d.tot.ingresosMes ? 'Te llegaron este mes: ' + dinero.format(d.tot.ingresosMes) : '';
+      $('semana').textContent = dinero.format(d.tot.semana);
+      $('ingresos').textContent = d.tot.ingresosMes ? 'Te llegaron este mes ' + dinero.format(d.tot.ingresosMes) : '';
 
       const nuevo = selector('Categoría: automática');
       nuevo.hidden = tipoMano !== 'gasto';
       (selMano || $('catMano')).replaceWith(nuevo);
       selMano = nuevo;
 
-      $('pend').hidden = !d.porClasificar.length;
-      $('pendientes').replaceChildren(...d.porClasificar.map(filaPendiente));
+      const n = d.porClasificar.length;
+      $('pend').hidden = !n;
+      $('pendTexto').textContent = n === 1 ? '1 gasto por clasificar' : n + ' gastos por clasificar';
       renderCategorias(d.cat);
-      $('lista').replaceChildren(...(d.ultimos.length ? d.ultimos.map(filaMovimiento)
-        : [el('li', { className: 'det', textContent: 'Aún no hay movimientos.' })]));
+      renderLista(d.ultimos);
       $('reglas').replaceChildren(...d.reglas.map(filaRegla));
       $('fijas').replaceChildren(...CATS.map(filaFija));
       $('renDe').replaceChildren(...CATS.map(c => el('option', { value: c, textContent: c })));
     }
 
+    // Movimientos agrupados por día: Hoy, Ayer, "martes 28 oct"…
+    function etiquetaDia(ts) {
+      const d = new Date(ts), hoy = new Date(), ayer = new Date();
+      ayer.setDate(hoy.getDate() - 1);
+      if (d.toDateString() === hoy.toDateString()) return 'Hoy';
+      if (d.toDateString() === ayer.toDateString()) return 'Ayer';
+      return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
+    }
+    function renderLista(movs) {
+      if (!movs.length) return $('lista').replaceChildren(el('p', { className: 'sub', textContent: 'Aún no hay movimientos. Toca + para registrar.' }));
+      const grupos = [];
+      movs.forEach(m => {
+        const et = etiquetaDia(m.id);
+        if (!grupos.length || grupos[grupos.length - 1][0] !== et) grupos.push([et, []]);
+        grupos[grupos.length - 1][1].push(m);
+      });
+      $('lista').replaceChildren(...grupos.flatMap(([et, items]) =>
+        [el('div', { className: 'etq', textContent: et }), el('ul', {}, ...items.map(filaMovimiento))]));
+    }
+
+    function abrirPendientes() {
+      abrirPanel(el('h3', { textContent: 'Por clasificar' }),
+        el('p', { className: 'det', textContent: 'Elige la categoría y la app la recuerda para la próxima.' }),
+        el('ul', {}, ...ULTIMO.porClasificar.map(filaPendiente)));
+    }
+    $('pend').addEventListener('click', abrirPendientes);
+
+    // ---------- Pestañas ----------
+
+    function irA(tab) {
+      ['Inicio', 'Categorias', 'Ajustes'].forEach(t => { $('tab' + t).hidden = t !== tab; });
+      document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
+      $('fab').hidden = tab === 'Ajustes';
+      window.scrollTo(0, 0);
+    }
+    document.querySelectorAll('#tabbar button').forEach(b => b.addEventListener('click', () => irA(b.dataset.tab)));
+
     // ---------- Panel ----------
 
+    // El formulario de registro vive en #almacen y se muda al panel al tocar +.
+    const FORM = $('f');
+    function guardarForm() { if (FORM.parentNode !== $('almacen')) $('almacen').append(FORM); }
+
     function abrirPanel(...contenido) {
+      guardarForm();
       $('panel').replaceChildren(...contenido);
       $('velo').hidden = false;
     }
-    function cerrarPanel() { $('velo').hidden = true; }
+    function cerrarPanel() { guardarForm(); $('velo').hidden = true; }
+
+    $('fab').addEventListener('click', () => abrirPanel(el('h3', { textContent: 'Registrar', style: 'margin-bottom:16px' }), FORM));
+    $('btnBloquear').addEventListener('click', bloquear);
     $('velo').addEventListener('click', ev => { if (ev.target === $('velo')) cerrarPanel(); });
 
     // Ejecuta una acción del panel: bloquea botones, manda, repinta y cierra.
@@ -634,6 +710,7 @@
       api(cuerpo)
         .then(d => {
           render(d);
+          cerrarPanel();
           ['monto', 'concepto', 'dTotal', 'dGastar', 'dFijos', 'dAhorro', 'dConcepto'].forEach(id => { $(id).value = ''; });
           $('cuentaMano').value = '';
           actualizarFalta();
@@ -642,7 +719,7 @@
         .finally(() => { $('btn').disabled = false; });
     });
 
-    $('nuevaRegla').addEventListener('submit', ev => { ev.preventDefault(); editarRegla(); });
+    $('btnNuevaRegla').addEventListener('click', () => editarRegla());
 
     $('fRen').addEventListener('submit', ev => {
       ev.preventDefault();
@@ -683,10 +760,12 @@
       ULTIMO = null;
       cerrarPanel();
       $('app').hidden = true;
+      $('tabbar').hidden = true;
+      $('fab').hidden = true;
       $('candado').hidden = false;
       $('btnEntrar').hidden = true;
       candadoMsg('Bloqueado');
-      ['lista', 'pendientes', 'cats', 'reglas'].forEach(id => $(id).replaceChildren());
+      ['lista', 'cats', 'reglas', 'fijas'].forEach(id => $(id).replaceChildren());
     }
 
     function abrir(j) {
@@ -694,7 +773,8 @@
       render(j.datos);
       $('candado').hidden = true;
       $('app').hidden = false;
-      window.scrollTo(0, 0);
+      $('tabbar').hidden = false;
+      irA('Inicio');
     }
 
     async function prepararCandado(auto) {
