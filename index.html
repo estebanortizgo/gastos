@@ -852,6 +852,23 @@
       else if (!SES) prepararCandado(true);
     });
 
+    // ---------- Actualización automática ----------
+    // GitHub Pages deja la página en caché 10 min. Al abrir, se compara con version.txt (sin caché);
+    // si hay versión nueva, se refresca la copia guardada y se recarga una sola vez.
+    const VERSION = '2026-10-30-3';
+    async function revisarVersion() {
+      try {
+        const v = (await (await fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })).text()).trim();
+        if (v && v !== VERSION && sessionStorage.getItem('recargado') !== v) {
+          sessionStorage.setItem('recargado', v);
+          await fetch(location.pathname, { cache: 'reload' });
+          location.reload();
+        }
+      } catch (e) { /* sin conexión: seguimos con la copia actual */ }
+    }
+    revisarVersion();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) revisarVersion(); });
+
     prepararCandado(true);
   </script>
 </body>
