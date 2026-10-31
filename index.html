@@ -14,23 +14,26 @@
   <link rel="icon" href="icono-180.png">
   <style>
     :root { --bg:#f2f2f7; --card:#fff; --txt:#1c1c1e; --sub:#6e6e73; --acc:#0071e3; --ing:#1a7f37;
-            --linea:#e5e5ea; --warn:#b25000; --bad:#d70015; --velo:rgba(0,0,0,.35); }
+            --linea:#e5e5ea; --warn:#b25000; --bad:#d70015; --fijo:#8944ab; --velo:rgba(0,0,0,.35); }
     @media (prefers-color-scheme: dark) {
       :root { --bg:#000; --card:#1c1c1e; --txt:#f5f5f7; --sub:#98989d; --acc:#0a84ff; --ing:#30d158;
-              --linea:#2c2c2e; --warn:#ffb340; --bad:#ff6961; --velo:rgba(0,0,0,.6); }
+              --linea:#2c2c2e; --warn:#ffb340; --bad:#ff6961; --fijo:#da8fff; --velo:rgba(0,0,0,.6); }
     }
     * { box-sizing:border-box; }
-    body { margin:0; padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 40px); background:var(--bg); color:var(--txt);
-           font:16px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+    [hidden] { display:none !important; }
+    body { margin:0; padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 40px);
+           background:var(--bg); color:var(--txt); font:16px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
     h1 { font-size:28px; margin:0 0 16px; }
     h2 { font-size:18px; margin:24px 0 8px; }
     .card { background:var(--card); border-radius:14px; padding:14px 16px; }
     .card span { display:block; color:var(--sub); font-size:13px; }
     .card b { font-size:22px; font-variant-numeric:tabular-nums; }
-    .grande b { font-size:32px; }
+    .card small { color:var(--sub); font-size:12px; }
+    .grande b { font-size:28px; }
     .fila { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
     .sub { color:var(--sub); font-size:14px; margin:10px 2px 0; }
     form { display:grid; gap:8px; margin-top:8px; }
+    label.campo { display:grid; gap:4px; font-size:13px; color:var(--sub); }
     input, select, button { font:inherit; padding:12px; border-radius:10px; border:1px solid var(--linea);
                             background:var(--card); color:var(--txt); width:100%; }
     select { appearance:none; -webkit-appearance:none; }
@@ -39,29 +42,31 @@
     button:disabled { opacity:.5; }
     button.sec { background:var(--linea); color:var(--txt); }
     button.peligro { background:transparent; color:var(--bad); border:1px solid var(--bad); }
-    .seg { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-    .seg label { text-align:center; padding:10px; border-radius:10px; background:var(--card);
-                 border:1px solid var(--linea); font-size:15px; }
+    .seg { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+    .seg label { text-align:center; padding:10px 4px; border-radius:10px; background:var(--card);
+                 border:1px solid var(--linea); font-size:14px; }
     .seg input { display:none; }
     .seg label:has(input:checked) { border-color:var(--acc); color:var(--acc); font-weight:600; }
     ul { list-style:none; margin:0; padding:0; background:var(--card); border-radius:14px; }
     li { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px;
          border-bottom:1px solid var(--linea); }
     li:last-child { border-bottom:0; }
-    li.toca { cursor:pointer; }
-    li.toca:active { background:var(--linea); }
+    li.toca, .toca { cursor:pointer; }
+    li.toca:active, .card.toca:active { background:var(--linea); }
     .nom { font-weight:500; }
     .det { color:var(--sub); font-size:13px; }
     .m { font-variant-numeric:tabular-nums; white-space:nowrap; }
     .m.ingreso, .m.reembolso { color:var(--ing); }
     .m.presupuesto { color:var(--acc); }
+    .m.fijos { color:var(--fijo); }
+    .m.ahorro, .m.retiro { color:var(--sub); }
+    .chip { display:inline-block; font-size:11px; padding:1px 6px; border-radius:6px; background:var(--linea); color:var(--fijo); margin-left:4px; }
     .pend { display:block; }
     .pend .arriba { display:flex; justify-content:space-between; gap:12px; }
     .pend .abajo { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:8px; }
     .pend .abajo button { width:auto; padding:10px 14px; }
     .pend input, .pend select { padding:10px; }
-    /* Presupuesto */
-    .pres { margin-bottom:10px; }
+    /* Para gastar */
     .pres b { font-size:40px; }
     .pres.warn b { color:var(--warn); }
     .pres.bad b { color:var(--bad); }
@@ -69,7 +74,14 @@
     .barra i { display:block; height:100%; width:0; background:var(--acc); border-radius:4px; transition:width .3s; }
     .pres.warn .barra i { background:var(--warn); }
     .pres.bad .barra i { background:var(--bad); }
-    .pres small { color:var(--sub); font-size:13px; }
+    .pres small { font-size:13px; }
+    #cFijos b { color:var(--fijo); }
+    #cFijos.bad b { color:var(--bad); }
+    /* Reparto */
+    .reparto { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    .falta { font-size:14px; font-weight:600; }
+    .falta.okk { color:var(--ing); }
+    .falta.mal { color:var(--bad); }
     /* Por categoría */
     .nav { display:flex; align-items:center; justify-content:space-between; margin:24px 0 8px; }
     .nav h2 { margin:0; }
@@ -86,30 +98,37 @@
     summary::-webkit-details-marker { display:none; }
     summary::after { content:' ›'; color:var(--sub); }
     details[open] summary::after { content:' ⌄'; }
-    .renombrar { display:grid; gap:8px; margin-top:12px; }
-    /* Panel de edición */
+    .checks li { padding:10px 16px; }
+    .checks input { width:auto; }
+    /* Panel */
     .velo { position:fixed; inset:0; background:var(--velo); display:flex; align-items:flex-end; z-index:10; }
     .velo[hidden] { display:none; }
     .panel { background:var(--bg); width:100%; max-height:90vh; overflow:auto; border-radius:16px 16px 0 0;
-             padding:18px 16px 28px; }
+             padding:18px 16px calc(env(safe-area-inset-bottom) + 24px); }
     .panel h3 { margin:0 0 4px; font-size:20px; }
     .panel .acciones { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .pin { letter-spacing:12px; text-align:center; font-size:24px; }
+    .pin::placeholder { letter-spacing:normal; font-size:16px; }
+    .saldoAh { font-size:40px; font-weight:700; text-align:center; margin:12px 0 4px; font-variant-numeric:tabular-nums; }
   </style>
 </head>
 <body>
   <h1>Mis gastos</h1>
 
   <div class="card pres" id="pres">
-    <span id="presTitulo">Disponible del presupuesto</span>
+    <span id="presTitulo">Para gastar</span>
     <b id="disp">—</b>
     <div class="barra"><i id="barra"></i></div>
     <small id="presDet"></small>
   </div>
-
-  <div class="card grande"><span>Gastado este mes</span><b id="mes">—</b></div>
   <div class="fila">
-    <div class="card"><span>Hoy</span><b id="hoy">—</b></div>
-    <div class="card"><span>Esta semana</span><b id="semana">—</b></div>
+    <div class="card" id="cFijos"><span>Fijos</span><b id="fijos">—</b><br><small id="fijosDet"></small></div>
+    <div class="card toca" id="cAhorro"><span>Ahorro 🔒</span><b id="ahorro">••••••</b><br><small id="ahorroDet">Toca para ver</small></div>
+  </div>
+
+  <div class="fila">
+    <div class="card"><span>Gastado este mes</span><b id="mes">—</b></div>
+    <div class="card"><span>Hoy · semana</span><b id="hoy">—</b><br><small id="semana"></small></div>
   </div>
   <p class="sub" id="ingresos"></p>
 
@@ -118,12 +137,35 @@
     <ul id="pendientes"></ul>
   </div>
 
-  <h2>Agregar a mano</h2>
+  <h2>Registrar</h2>
   <form id="f">
     <div class="seg" id="tipos"></div>
-    <input id="monto" inputmode="decimal" placeholder="Monto" required>
-    <input id="concepto" placeholder="Concepto (ej. tacos, cine)">
-    <div id="catMano"></div>
+
+    <div id="campoGasto" style="display:grid;gap:8px">
+      <input id="monto" inputmode="decimal" placeholder="Monto">
+      <input id="concepto" placeholder="Concepto (ej. tacos, cine)">
+      <div id="catMano"></div>
+      <select id="cuentaMano">
+        <option value="">Se paga de: automático (según categoría)</option>
+        <option value="gastar">Se paga de: Para gastar</option>
+        <option value="fijos">Se paga de: Fijos</option>
+      </select>
+    </div>
+
+    <div id="campoDeposito" style="display:none;gap:8px">
+      <label class="campo">¿Cuánto llegó?<input id="dTotal" inputmode="decimal" placeholder="3500"></label>
+      <div class="reparto">
+        <label class="campo">Para gastar<input id="dGastar" inputmode="decimal" placeholder="0"></label>
+        <label class="campo">Fijos<input id="dFijos" inputmode="decimal" placeholder="0"></label>
+        <label class="campo">Ahorro<input id="dAhorro" inputmode="decimal" placeholder="0"></label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span class="falta" id="dFalta"></span>
+        <button type="button" class="sec" id="dResto" style="width:auto;padding:8px 12px">Resto → Ahorro</button>
+      </div>
+      <input id="dConcepto" placeholder="Concepto (ej. Quincena)">
+    </div>
+
     <button id="btn">Agregar</button>
   </form>
 
@@ -138,13 +180,17 @@
   <p class="sub" style="margin:-4px 2px 8px">Toca uno para editarlo o borrarlo.</p>
   <ul id="lista"><li class="det">Cargando…</li></ul>
 
-  <details id="detReglas">
+  <details>
     <summary>Categorías y reglas</summary>
-    <p class="sub">Si el comercio <b>contiene</b> el texto, el gasto va a esa categoría. Si varias coinciden, gana la más específica (la más larga).</p>
+    <h2>Se pagan de Fijos</h2>
+    <p class="sub" style="margin-top:0">Los gastos de estas categorías salen de <b>Fijos</b>, no de lo que tienes para gastar.</p>
+    <ul class="checks" id="fijas" style="margin-top:8px"></ul>
+    <h2>Reglas</h2>
+    <p class="sub" style="margin-top:0">Si el comercio <b>contiene</b> el texto, el gasto va a esa categoría. Si varias coinciden, gana la más específica.</p>
     <ul id="reglas" style="margin-top:8px"></ul>
     <form id="nuevaRegla"><button type="submit" class="sec">➕ Nueva regla</button></form>
     <h2>Renombrar categoría</h2>
-    <form class="renombrar" id="fRen">
+    <form id="fRen">
       <select id="renDe"></select>
       <input id="renA" placeholder="Nombre nuevo" required>
       <button>Renombrar</button>
@@ -160,37 +206,34 @@
     const deHash = new URLSearchParams(location.hash.slice(1)).get('k');
     if (deHash) localStorage.setItem('k', deHash);
     const K = deHash || localStorage.getItem('k');
-    let MES = null;   // mes que se ve en "Por categoría" (null = el actual)
+    let MES = null;    // mes que se ve en "Por categoría" (null = el actual)
+    let PIN = null;    // solo en memoria; se borra al salir de la app
     let CATS = [];
+    let ULTIMO = null; // últimos datos
 
-    // Petición directa al script (texto plano = sin preflight CORS). No usa la sesión de Google.
     async function api(cuerpo) {
       if (!K) throw new Error('Falta el token. Abre la app desde el enlace de la hoja (Config → B3).');
-      const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify(Object.assign({ k: K, app: true, mes: MES }, cuerpo)) });
+      const base = { k: K, app: true, mes: MES };
+      if (PIN) base.pin = PIN;
+      const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify(Object.assign(base, cuerpo)) });
       const j = await r.json();
-      if (!j.ok) throw new Error(j.error);
+      if (!j.ok) {
+        if (/PIN|intentos/.test(j.error)) PIN = null;
+        throw new Error(String(j.error).replace(/^Error: /, ''));
+      }
       return j.datos;
     }
     const dinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
     const $ = id => document.getElementById(id);
     const el = (tag, props, ...hijos) => { const e = Object.assign(document.createElement(tag), props || {}); e.append(...hijos); return e; };
+    const num = v => { const n = parseFloat(String(v || '').replace(/[^\d.]/g, '')); return isNaN(n) ? 0 : n; };
     function error(e) { alert((e && e.message) || e); }
 
-    const TIPOS = [
-      ['gasto', 'Gasto', 'Concepto (ej. tacos, cine)'],
-      ['reembolso', 'Me regresaron', '¿Quién te regresó? (ej. Juan, cena)'],
-      ['presupuesto', '➕ Presupuesto', 'Nota (ej. quincena)'],
-      ['ingreso', 'Ingreso', 'Concepto (ej. pago cliente)'],
-    ];
-
-    // Botones de tipo (Gasto / Me regresaron / ➕ Presupuesto / Ingreso) para el formulario y el panel.
-    function botonesTipo(cont, nombre, actual, alCambiar) {
-      cont.replaceChildren(...TIPOS.map(([v, t]) => {
-        const inp = el('input', { type: 'radio', name: nombre, value: v, checked: v === actual });
-        inp.addEventListener('change', () => alCambiar(v));
-        return el('label', {}, inp, t);
-      }));
-    }
+    const NOMBRE_TIPO = {
+      gasto: 'Gasto', reembolso: 'Me regresaron', presupuesto: 'A Para gastar', fijos: 'A Fijos',
+      ahorro: 'Al ahorro', retiro: 'Retiro de ahorro', ingreso: 'Ingreso',
+    };
+    const OCULTOS = ['ahorro', 'retiro'];
 
     // Menú desplegable de categorías; "➕ Otra…" muestra un campo para escribir una nueva.
     function selector(primera, valor) {
@@ -209,25 +252,34 @@
 
     // ---------- Pintar ----------
 
-    function renderPresupuesto(p) {
-      const caja = $('pres');
+    function renderCuentas(c) {
+      const p = c.gastar, caja = $('pres');
       caja.classList.remove('warn', 'bad');
       if (!p.activo) {
-        $('presTitulo').textContent = 'Sin presupuesto';
+        $('presTitulo').textContent = 'Para gastar';
         $('disp').textContent = '—';
         $('barra').style.width = '0';
-        $('presDet').textContent = 'Agrega dinero con "➕ Presupuesto" abajo.';
-        return;
+        $('presDet').textContent = 'Registra un depósito con "💰 Llegó dinero".';
+      } else {
+        const total = p.abonado + p.reembolsos;
+        const usado = total ? Math.min(p.gastado / total, 1) : 1;
+        if (p.disponible < 0) caja.classList.add('bad');
+        else if (usado >= 0.8) caja.classList.add('warn');
+        $('presTitulo').textContent = p.disponible < 0 ? 'Te pasaste de lo que tenías para gastar' : 'Para gastar';
+        $('disp').textContent = (p.disponible < 0 ? '−' : '') + dinero.format(Math.abs(p.disponible));
+        $('barra').style.width = (usado * 100).toFixed(1) + '%';
+        $('presDet').textContent = 'Gastado ' + dinero.format(p.gastado) + ' de ' + dinero.format(total)
+          + (p.reembolsos ? ' (incluye ' + dinero.format(p.reembolsos) + ' que te regresaron)' : '');
       }
-      const total = p.abonado + p.reembolsos;
-      const usado = total ? Math.min(p.gastado / total, 1) : 1;
-      if (p.disponible < 0) caja.classList.add('bad');
-      else if (usado >= 0.8) caja.classList.add('warn');
-      $('presTitulo').textContent = p.disponible < 0 ? 'Te pasaste del presupuesto' : 'Disponible del presupuesto';
-      $('disp').textContent = (p.disponible < 0 ? '−' : '') + dinero.format(Math.abs(p.disponible));
-      $('barra').style.width = (usado * 100).toFixed(1) + '%';
-      $('presDet').textContent = 'Gastado ' + dinero.format(p.gastado) + ' de ' + dinero.format(total)
-        + (p.reembolsos ? ' (incluye ' + dinero.format(p.reembolsos) + ' que te regresaron)' : '');
+
+      const f = c.fijos;
+      $('cFijos').classList.toggle('bad', f.activo && f.disponible < 0);
+      $('fijos').textContent = f.activo ? (f.disponible < 0 ? '−' : '') + dinero.format(Math.abs(f.disponible)) : '—';
+      $('fijosDet').textContent = f.activo ? 'Pagado ' + dinero.format(f.pagado) + ' de ' + dinero.format(f.asignado) : 'Sin asignar';
+
+      const a = c.ahorro;
+      $('ahorro').textContent = a.visible ? dinero.format(a.saldo) : '••••••';
+      $('ahorroDet').textContent = a.visible ? 'Toca para opciones' : (a.tienePin ? 'Toca para ver' : 'Toca para crear tu PIN');
     }
 
     function renderCategorias(c) {
@@ -239,9 +291,11 @@
         const barra = el('div', { className: 'barra' }, el('i'));
         barra.firstChild.style.width = (i.monto / max * 100).toFixed(1) + '%';
         const pct = c.total ? Math.round(i.monto / c.total * 100) + ' %' : '';
+        const nombre = el('div', { className: 'nom', textContent: i.categoria });
+        if (ULTIMO.fijas.includes(i.categoria)) nombre.append(el('span', { className: 'chip', textContent: 'Fijo' }));
         return el('li', {},
           el('div', { className: 'arriba' },
-            el('div', {}, el('div', { className: 'nom', textContent: i.categoria }), el('div', { className: 'det', textContent: pct })),
+            el('div', {}, nombre, el('div', { className: 'det', textContent: pct })),
             el('div', { className: 'm', textContent: dinero.format(i.monto) })),
           barra);
       }) : [el('li', { className: 'det', textContent: 'Sin gastos en este mes.' })]));
@@ -250,13 +304,21 @@
         : '';
     }
 
+    function textoMonto(m) {
+      if (m.monto === null) return '••••';
+      return (m.tipo === 'gasto' || m.tipo === 'retiro' ? '' : '+') + dinero.format(m.monto);
+    }
+
     function filaMovimiento(m) {
+      const nombre = el('div', { className: 'nom', textContent: m.comercio || m.categoria });
+      if (m.tipo === 'gasto' && m.cuenta === 'fijos') nombre.append(el('span', { className: 'chip', textContent: 'Fijos' }));
+      const etiqueta = m.tipo === 'gasto' ? m.categoria : NOMBRE_TIPO[m.tipo] || m.categoria;
       const li = el('li', { className: 'toca' },
-        el('div', {},
-          el('div', { className: 'nom', textContent: m.comercio || m.categoria }),
-          el('div', { className: 'det', textContent: m.fecha + ' · ' + m.categoria })),
-        el('div', { className: 'm ' + m.tipo, textContent: (m.tipo === 'gasto' ? '' : '+') + dinero.format(m.monto) }));
-      li.addEventListener('click', () => editarMovimiento(m));
+        el('div', {}, nombre, el('div', { className: 'det', textContent: m.fecha + ' · ' + etiqueta })),
+        el('div', { className: 'm ' + m.tipo, textContent: textoMonto(m) }));
+      li.addEventListener('click', () => OCULTOS.includes(m.tipo) && !PIN
+        ? pedirPin(() => { const n = ULTIMO.ultimos.find(x => x.id === m.id); if (n) editarMovimiento(n); })
+        : editarMovimiento(m));
       return li;
     }
 
@@ -286,16 +348,27 @@
       return li;
     }
 
+    function filaFija(c) {
+      const caja = el('input', { type: 'checkbox', checked: ULTIMO.fijas.includes(c) });
+      caja.addEventListener('change', () => {
+        const lista = [...document.querySelectorAll('#fijas input')].filter(x => x.checked).map(x => x.value);
+        api({ accion: 'fijas', categorias: lista }).then(render).catch(e => { caja.checked = !caja.checked; error(e); });
+      });
+      caja.value = c;
+      return el('li', {}, el('label', { style: 'display:flex;gap:10px;align-items:center;width:100%' }, caja, c));
+    }
+
     let selMano;
     let tipoMano = 'gasto';
     function render(d) {
+      ULTIMO = d;
       MES = d.cat.mes;
       CATS = d.categorias;
-      renderPresupuesto(d.pres);
+      renderCuentas(d.cuentas);
       $('mes').textContent = dinero.format(d.tot.mes);
       $('hoy').textContent = dinero.format(d.tot.hoy);
-      $('semana').textContent = dinero.format(d.tot.semana);
-      $('ingresos').textContent = d.tot.ingresosMes ? 'Ingresos del mes: ' + dinero.format(d.tot.ingresosMes) : '';
+      $('semana').textContent = 'Semana: ' + dinero.format(d.tot.semana);
+      $('ingresos').textContent = d.tot.ingresosMes ? 'Te llegaron este mes: ' + dinero.format(d.tot.ingresosMes) : '';
 
       const nuevo = selector('Categoría: automática');
       nuevo.hidden = tipoMano !== 'gasto';
@@ -308,10 +381,11 @@
       $('lista').replaceChildren(...(d.ultimos.length ? d.ultimos.map(filaMovimiento)
         : [el('li', { className: 'det', textContent: 'Aún no hay movimientos.' })]));
       $('reglas').replaceChildren(...d.reglas.map(filaRegla));
+      $('fijas').replaceChildren(...CATS.map(filaFija));
       $('renDe').replaceChildren(...CATS.map(c => el('option', { value: c, textContent: c })));
     }
 
-    // ---------- Panel de edición ----------
+    // ---------- Panel ----------
 
     function abrirPanel(...contenido) {
       $('panel').replaceChildren(...contenido);
@@ -321,34 +395,144 @@
     $('velo').addEventListener('click', ev => { if (ev.target === $('velo')) cerrarPanel(); });
 
     // Ejecuta una acción del panel: bloquea botones, manda, repinta y cierra.
-    function accionPanel(botones, cuerpo) {
+    function accionPanel(botones, cuerpo, alTerminar) {
       botones.forEach(b => b.disabled = true);
-      api(cuerpo).then(d => { render(d); cerrarPanel(); })
+      api(cuerpo).then(d => { render(d); cerrarPanel(); if (alTerminar) alTerminar(); })
         .catch(e => { botones.forEach(b => b.disabled = false); error(e); });
     }
+    const botonCancelar = () => { const b = el('button', { type: 'button', className: 'sec', textContent: 'Cancelar' }); b.addEventListener('click', cerrarPanel); return b; };
+    const campoPin = ph => el('input', { type: 'password', inputMode: 'numeric', maxLength: 4, pattern: '[0-9]{4}',
+      autocomplete: 'off', placeholder: ph || '••••', className: 'pin', required: true });
+
+    // ---------- Ahorro y PIN ----------
+
+    // Pide el PIN (o lo crea la primera vez) y, si es correcto, ejecuta alAbrir.
+    function pedirPin(alAbrir) {
+      const crear = !ULTIMO.cuentas.ahorro.tienePin;
+      const pin1 = campoPin(), pin2 = campoPin('Repite el PIN');
+      const ok = el('button', { textContent: crear ? 'Crear PIN' : 'Ver ahorro' });
+      const form = el('form', {}, pin1, ...(crear ? [pin2] : []), ok, botonCancelar());
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        if (crear && pin1.value !== pin2.value) return alert('Los PIN no coinciden.');
+        const anterior = PIN;
+        PIN = pin1.value;
+        ok.disabled = true;
+        api(crear ? { accion: 'crearPin', pinNuevo: pin1.value } : { accion: 'datos' })
+          .then(d => { render(d); cerrarPanel(); if (alAbrir) alAbrir(); })
+          .catch(e => { PIN = anterior; ok.disabled = false; pin1.value = ''; error(e); });
+      });
+      abrirPanel(el('h3', { textContent: crear ? 'Crea tu PIN del ahorro' : 'PIN del ahorro' }),
+        el('p', { className: 'det', textContent: crear ? '4 números. Lo vas a necesitar para ver o sacar tu ahorro.' : 'Escribe tu PIN de 4 números.' }),
+        form);
+      setTimeout(() => pin1.focus(), 50);
+    }
+
+    function panelAhorro() {
+      const a = ULTIMO.cuentas.ahorro;
+      const sacar = el('button', { textContent: 'Sacar dinero' });
+      const ajustar = el('button', { className: 'sec', textContent: 'Ajustar al saldo real de Banorte' });
+      const cambiar = el('button', { className: 'sec', textContent: 'Cambiar PIN' });
+      const ocultar = el('button', { className: 'sec', textContent: '🔒 Ocultar' });
+      sacar.addEventListener('click', sacarAhorro);
+      ajustar.addEventListener('click', ajustarAhorro);
+      cambiar.addEventListener('click', cambiarPin);
+      ocultar.addEventListener('click', ocultarAhorro);
+      abrirPanel(el('h3', { textContent: 'Ahorro' }),
+        el('div', { className: 'saldoAh', textContent: dinero.format(a.saldo) }),
+        el('p', { className: 'det', style: 'text-align:center', textContent: a.retiradoMes ? 'Este mes has sacado ' + dinero.format(a.retiradoMes) : 'No has sacado nada este mes 💪' }),
+        el('form', {}, sacar, ajustar, cambiar, ocultar));
+    }
+
+    function sacarAhorro() {
+      const a = ULTIMO.cuentas.ahorro;
+      const monto = el('input', { inputMode: 'decimal', placeholder: 'Monto', required: true });
+      const motivo = el('input', { placeholder: '¿Para qué? (ej. emergencia médica)', required: true });
+      const destino = el('select', {}, el('option', { value: 'gastar', textContent: 'Pasarlo a: Para gastar' }), el('option', { value: 'fijos', textContent: 'Pasarlo a: Fijos' }));
+      const ok = el('button', { textContent: 'Sacar del ahorro' });
+      const form = el('form', {}, monto, motivo, destino, ok, botonCancelar());
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        const n = num(monto.value);
+        const aviso = '¿Seguro que quieres sacar ' + dinero.format(n) + ' del ahorro para "' + motivo.value + '"?'
+          + (a.retiradoMes ? '\nEste mes ya sacaste ' + dinero.format(a.retiradoMes) + '.' : '');
+        if (!confirm(aviso)) return;
+        accionPanel([ok], { accion: 'sacarAhorro', monto: monto.value, motivo: motivo.value, destino: destino.value });
+      });
+      abrirPanel(el('h3', { textContent: 'Sacar del ahorro' }),
+        el('p', { className: 'det', textContent: 'Tienes ' + dinero.format(a.saldo) + '. Solo si de verdad lo necesitas.' }), form);
+    }
+
+    function ajustarAhorro() {
+      const saldo = el('input', { inputMode: 'decimal', placeholder: 'Saldo que ves en Banorte (cuenta Ahorro)', required: true });
+      const ok = el('button', { textContent: 'Ajustar' });
+      const form = el('form', {}, saldo, ok, botonCancelar());
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        accionPanel([ok], { accion: 'ajustarAhorro', saldo: saldo.value }, panelAhorro);
+      });
+      abrirPanel(el('h3', { textContent: 'Ajustar ahorro' }),
+        el('p', { className: 'det', textContent: 'Úsalo la primera vez (para empezar con lo que ya tienes) o si algo no cuadra con Banorte. No cuenta como retiro.' }), form);
+    }
+
+    function cambiarPin() {
+      const actual = campoPin('Actual'), nuevo = campoPin('Nuevo'), repite = campoPin('Repite');
+      const ok = el('button', { textContent: 'Cambiar PIN' });
+      const form = el('form', {}, actual, nuevo, repite, ok, botonCancelar());
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        if (nuevo.value !== repite.value) return alert('Los PIN nuevos no coinciden.');
+        ok.disabled = true;
+        api({ accion: 'crearPin', pinActual: actual.value, pinNuevo: nuevo.value })
+          .then(d => { PIN = nuevo.value; render(d); cerrarPanel(); alert('PIN cambiado ✅'); })
+          .catch(e => { ok.disabled = false; error(e); });
+      });
+      abrirPanel(el('h3', { textContent: 'Cambiar PIN' }), form);
+    }
+
+    function ocultarAhorro() {
+      PIN = null;
+      cerrarPanel();
+      if (ULTIMO) {
+        ULTIMO.cuentas.ahorro = { visible: false, tienePin: true };
+        ULTIMO.ultimos.forEach(m => { if (OCULTOS.includes(m.tipo)) m.monto = null; });
+        render(ULTIMO);
+      }
+    }
+    // Se vuelve a ocultar en cuanto sales de la app.
+    document.addEventListener('visibilitychange', () => { if (document.hidden && PIN) ocultarAhorro(); });
+
+    $('cAhorro').addEventListener('click', () => ULTIMO.cuentas.ahorro.visible ? panelAhorro() : pedirPin(panelAhorro));
+
+    // ---------- Editar ----------
 
     function editarMovimiento(m) {
       let tipo = m.tipo;
-      const tipos = el('div', { className: 'seg' });
+      const tiposPermitidos = Object.keys(NOMBRE_TIPO).filter(t => PIN || !OCULTOS.includes(t));
+      const selTipo = el('select', {}, ...tiposPermitidos.map(t => el('option', { value: t, textContent: NOMBRE_TIPO[t], selected: t === tipo })));
       const monto = el('input', { inputMode: 'decimal', value: m.monto, placeholder: 'Monto', required: true });
       const concepto = el('input', { value: m.comercio, placeholder: 'Concepto' });
       const cat = selector('Categoría: automática', m.categoria);
-      cat.hidden = tipo !== 'gasto';
-      botonesTipo(tipos, 'tipoEd', tipo, v => { tipo = v; cat.hidden = v !== 'gasto'; });
+      const cuenta = el('select', {},
+        el('option', { value: '', textContent: 'Se paga de: automático (según categoría)' }),
+        el('option', { value: 'gastar', textContent: 'Se paga de: Para gastar' }),
+        el('option', { value: 'fijos', textContent: 'Se paga de: Fijos' }));
+      cuenta.value = m.cuentaElegida || '';
+      const soloGasto = () => { cat.hidden = cuenta.hidden = tipo !== 'gasto'; };
+      soloGasto();
+      selTipo.addEventListener('change', () => { tipo = selTipo.value; soloGasto(); });
       const guardar = el('button', { textContent: 'Guardar' });
       const borrar = el('button', { type: 'button', className: 'peligro', textContent: 'Borrar' });
-      const cancelar = el('button', { type: 'button', className: 'sec', textContent: 'Cancelar' });
-      const form = el('form', {}, tipos, monto, concepto, cat, guardar, el('div', { className: 'acciones' }, cancelar, borrar));
+      const form = el('form', {}, selTipo, monto, concepto, cat, cuenta, guardar, el('div', { className: 'acciones' }, botonCancelar(), borrar));
       form.addEventListener('submit', ev => {
         ev.preventDefault();
-        accionPanel([guardar, borrar], { accion: 'editar', fila: m.fila, id: m.id, tipo,
-          monto: monto.value, comercio: concepto.value, categoria: tipo === 'gasto' ? cat.valor() : '' });
+        accionPanel([guardar, borrar], { accion: 'editar', fila: m.fila, id: m.id, tipo, monto: monto.value,
+          comercio: concepto.value, categoria: tipo === 'gasto' ? cat.valor() : '', cuenta: tipo === 'gasto' ? cuenta.value : '' });
       });
       borrar.addEventListener('click', () => {
-        if (!confirm('¿Borrar "' + (m.comercio || m.categoria) + '" de ' + dinero.format(m.monto) + '?')) return;
+        if (!confirm('¿Borrar "' + (m.comercio || m.categoria) + '" de ' + textoMonto(m) + '?')) return;
         accionPanel([guardar, borrar], { accion: 'borrar', fila: m.fila, id: m.id });
       });
-      cancelar.addEventListener('click', cerrarPanel);
       abrirPanel(el('h3', { textContent: 'Editar movimiento' }),
         el('p', { className: 'det', textContent: m.fecha + (m.tarjeta ? ' · ' + m.tarjeta : '') }), form);
     }
@@ -359,8 +543,7 @@
       const cat = selector('Categoría', r.categoria);
       const guardar = el('button', { textContent: 'Guardar' });
       const borrar = el('button', { type: 'button', className: 'peligro', textContent: 'Borrar regla', hidden: !r.fila });
-      const cancelar = el('button', { type: 'button', className: 'sec', textContent: 'Cancelar' });
-      const form = el('form', {}, contiene, cat, guardar, el('div', { className: 'acciones' }, cancelar, borrar));
+      const form = el('form', {}, contiene, cat, guardar, el('div', { className: 'acciones' }, botonCancelar(), borrar));
       form.addEventListener('submit', ev => {
         ev.preventDefault();
         if (!cat.valor()) return alert('Elige una categoría');
@@ -370,25 +553,68 @@
         if (!confirm('¿Borrar la regla ' + r.contiene + ' → ' + r.categoria + '?')) return;
         accionPanel([guardar, borrar], { accion: 'borrarRegla', fila: r.fila, contiene: r.contiene });
       });
-      cancelar.addEventListener('click', cerrarPanel);
       abrirPanel(el('h3', { textContent: r.fila ? 'Editar regla' : 'Nueva regla' }),
         el('p', { className: 'det', textContent: 'Los pendientes que coincidan se clasifican solos.' }), form);
     }
 
-    // ---------- Formularios ----------
+    // ---------- Registrar: Gasto · Me regresaron · Llegó dinero ----------
 
-    botonesTipo($('tipos'), 'tipo', tipoMano, v => {
-      tipoMano = v;
-      selMano.hidden = v !== 'gasto';
-      $('concepto').placeholder = TIPOS.find(t => t[0] === v)[2];
+    const TIPOS_MANO = [
+      ['gasto', 'Gasto', 'Concepto (ej. tacos, cine)'],
+      ['reembolso', 'Me regresaron', '¿Quién te regresó? (ej. Juan, cena)'],
+      ['deposito', '💰 Llegó dinero', ''],
+    ];
+    $('tipos').replaceChildren(...TIPOS_MANO.map(([v, t]) => {
+      const inp = el('input', { type: 'radio', name: 'tipo', value: v, checked: v === tipoMano });
+      inp.addEventListener('change', () => {
+        tipoMano = v;
+        $('campoGasto').style.display = v === 'deposito' ? 'none' : 'grid';
+        $('campoDeposito').style.display = v === 'deposito' ? 'grid' : 'none';
+        selMano.hidden = $('cuentaMano').hidden = v !== 'gasto';
+        if (v !== 'deposito') $('concepto').placeholder = TIPOS_MANO.find(x => x[0] === v)[2];
+        $('btn').textContent = v === 'deposito' ? 'Guardar reparto' : 'Agregar';
+        if (v === 'deposito') { actualizarFalta(); $('dTotal').focus(); }
+      });
+      return el('label', {}, inp, t);
+    }));
+
+    // Reparto en vivo: cuánto falta por asignar.
+    function actualizarFalta() {
+      const total = num($('dTotal').value);
+      const falta = Math.round((total - num($('dGastar').value) - num($('dFijos').value) - num($('dAhorro').value)) * 100) / 100;
+      const f = $('dFalta');
+      f.className = 'falta ' + (total && falta === 0 ? 'okk' : falta < 0 ? 'mal' : '');
+      f.textContent = !total ? 'Escribe cuánto llegó' : falta === 0 ? '✅ Todo repartido'
+        : falta > 0 ? 'Falta asignar ' + dinero.format(falta) : 'Te pasaste por ' + dinero.format(-falta);
+      return falta;
+    }
+    ['dTotal', 'dGastar', 'dFijos', 'dAhorro'].forEach(id => $(id).addEventListener('input', actualizarFalta));
+    $('dResto').addEventListener('click', () => {
+      const resto = num($('dTotal').value) - num($('dGastar').value) - num($('dFijos').value);
+      $('dAhorro').value = resto > 0 ? Math.round(resto * 100) / 100 : 0;
+      actualizarFalta();
     });
 
     $('f').addEventListener('submit', ev => {
       ev.preventDefault();
+      let cuerpo;
+      if (tipoMano === 'deposito') {
+        if (actualizarFalta() !== 0 || !num($('dTotal').value)) return alert('El reparto tiene que cuadrar con lo que llegó.');
+        cuerpo = { accion: 'llegoDinero', monto: $('dTotal').value, gastar: $('dGastar').value, fijos: $('dFijos').value,
+                   ahorro: $('dAhorro').value, concepto: $('dConcepto').value };
+      } else {
+        if (!num($('monto').value)) return alert('Escribe el monto.');
+        cuerpo = { tipo: tipoMano, monto: $('monto').value, comercio: $('concepto').value, origen: 'manual',
+                   categoria: tipoMano === 'gasto' ? selMano.valor() : '', cuenta: tipoMano === 'gasto' ? $('cuentaMano').value : '' };
+      }
       $('btn').disabled = true;
-      api({ tipo: tipoMano, monto: $('monto').value, comercio: $('concepto').value,
-            categoria: tipoMano === 'gasto' ? selMano.valor() : '', origen: 'manual' })
-        .then(d => { render(d); $('monto').value = $('concepto').value = ''; })
+      api(cuerpo)
+        .then(d => {
+          render(d);
+          ['monto', 'concepto', 'dTotal', 'dGastar', 'dFijos', 'dAhorro', 'dConcepto'].forEach(id => { $(id).value = ''; });
+          $('cuentaMano').value = '';
+          actualizarFalta();
+        })
         .catch(error)
         .finally(() => { $('btn').disabled = false; });
     });
