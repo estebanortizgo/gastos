@@ -100,7 +100,7 @@
     .cat .arriba { display:flex; justify-content:space-between; gap:12px; }
     .cat .barra { margin:8px 0 0; }
     .checks label { display:flex; justify-content:space-between; align-items:center; width:100%; font-size:16px; }
-    .checks input { width:22px; height:22px; accent-color:var(--fijo); }
+    .checks input[type=checkbox] { width:22px; height:22px; padding:0; accent-color:var(--fijo); }
 
     /* Barra de pestañas y botón + */
     .tabbar { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; z-index:5;
@@ -126,6 +126,24 @@
     .pin { letter-spacing:14px; text-align:center; font-size:26px; }
     .pin::placeholder { letter-spacing:normal; font-size:17px; }
     .saldoAh { font-size:48px; font-weight:700; letter-spacing:-.03em; text-align:center; margin:16px 0 4px; font-variant-numeric:tabular-nums; }
+
+    /* Pendientes, aviso de guardado y Deshacer */
+    .pend .form2 { display:grid; gap:8px; margin-top:10px; }
+    .pend .botones { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .pend .botones button { padding:10px; font-size:15px; background:var(--bg); }
+    .pend .form2 input { background:var(--bg); padding:10px 12px; }
+    .avisoMoneda { color:var(--warn); }
+    li.guardando { opacity:.5; }
+    .guardando-pill { position:fixed; top:calc(env(safe-area-inset-top) + 8px); left:50%; transform:translateX(-50%); z-index:20;
+                      background:var(--card); color:var(--sub); font-size:13px; padding:6px 14px; border-radius:16px;
+                      box-shadow:0 4px 14px rgba(0,0,0,.15); }
+    .toast { position:fixed; left:20px; right:88px; bottom:calc(env(safe-area-inset-bottom) + 70px); z-index:15;
+             display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 10px 10px 16px;
+             background:#2c2c2e; color:#fff; border-radius:14px; font-size:15px; box-shadow:0 8px 24px rgba(0,0,0,.3); }
+    .toast button { width:auto; padding:8px 14px; background:none; color:#0a84ff; font-size:15px; }
+    .fijoMonto { flex:none; width:120px; padding:8px 10px; font-size:15px; text-align:right; background:var(--bg); }
+    .tc { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .difCuadre { font-size:16px; font-weight:600; margin:4px 0 8px; }
 
     /* Candado */
     #candado { min-height:80vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px; }
@@ -172,6 +190,15 @@
         <li id="cAhorro" class="toca"><div><div class="nom">Ahorro</div><div class="det" id="ahorroDet"></div></div><div class="derecha chev"><span class="m" id="ahorro">••••••</span></div></li>
       </ul>
       <p class="nota">Para meter dinero a Fijos o al Ahorro usa + → 💰 Llegó dinero. Para sacar del ahorro, toca Ahorro.</p>
+
+      <div id="bloqueConceptos" hidden>
+        <div class="etq">Fijos por concepto</div>
+        <ul id="fijosConceptos"></ul>
+      </div>
+
+      <div class="etq">Cuenta principal</div>
+      <button class="sec" id="btnCuadrar">Cuadrar con Banorte</button>
+      <p class="nota">Compara el saldo real de tu cuenta con lo que dice la app (Para gastar + Fijos) y te dice si falta registrar algo.</p>
       <p class="sub" id="ingresos" style="margin-top:20px"></p>
     </section>
 
@@ -188,7 +215,7 @@
       <h1>Ajustes</h1>
       <div class="etq" style="margin-top:0">Se pagan de Fijos</div>
       <ul class="checks" id="fijas"></ul>
-      <p class="nota">Los gastos de estas categorías salen de Fijos, no de lo que tienes para gastar.</p>
+      <p class="nota">Los gastos de estas categorías salen de Fijos. Pon cuánto separas por quincena para cada uno y "Llegó dinero" te lo sugerirá.</p>
 
       <div class="etq">Reglas</div>
       <ul id="reglas"></ul>
@@ -202,11 +229,20 @@
         <button>Renombrar</button>
       </form>
 
+      <div class="etq">Cobros en otra moneda</div>
+      <div class="tc">
+        <label class="campo">Dólar (USD)<input id="tcUSD" inputmode="decimal"></label>
+        <label class="campo">Euro (EUR)<input id="tcEUR" inputmode="decimal"></label>
+      </div>
+      <p class="nota">Se usa para estimar en pesos los cobros en otra moneda. Quedan en "por clasificar" hasta que pongas el monto real que te cobró Banorte.</p>
+
       <div class="etq">Sesión</div>
       <button class="sec" id="btnBloquear">Bloquear ahora</button>
     </section>
   </main>
 
+  <div class="guardando-pill" id="guardando" hidden>Guardando…</div>
+  <div class="toast" id="toast" hidden><span id="toastTxt"></span><button id="toastBtn">Deshacer</button></div>
   <button class="fab" id="fab" hidden aria-label="Registrar">+</button>
   <nav class="tabbar" id="tabbar" hidden>
     <button data-tab="Inicio" class="activo"><i>◉</i>Inicio</button>
@@ -242,6 +278,7 @@
           <span class="falta" id="dFalta"></span>
           <button type="button" class="sec" id="dResto" style="width:auto;padding:8px 12px;font-size:15px">Resto → Ahorro</button>
         </div>
+        <p class="nota" id="dSugerido" style="margin:0 2px"></p>
         <input id="dConcepto" placeholder="Concepto (ej. Quincena)">
       </div>
 
@@ -271,18 +308,26 @@
       return j;
     }
 
+    let enCurso = 0; // peticiones en vuelo (para el aviso "Guardando…")
     async function api(cuerpo) {
       if (!SES) { bloquear(); throw new Error('Entra con Face ID.'); }
       const base = { s: SES, app: true, mes: MES };
       if (PIN) base.pin = PIN;
-      const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify(Object.assign(base, cuerpo)) });
-      const j = await r.json();
-      if (!j.ok) {
-        if (/Sesión vencida/.test(j.error)) { bloquear(); prepararCandado(true); }
-        if (/PIN|intentos/.test(j.error)) PIN = null;
-        throw new Error(String(j.error).replace(/^Error: /, ''));
+      enCurso++;
+      $('guardando').hidden = cuerpo.accion === 'datos';
+      try {
+        const r = await fetch(URL_APP, { method: 'POST', body: JSON.stringify(Object.assign(base, cuerpo)) });
+        const j = await r.json();
+        if (!j.ok) {
+          if (/Sesión vencida/.test(j.error)) { bloquear(); prepararCandado(true); }
+          if (/PIN|intentos/.test(j.error)) PIN = null;
+          throw new Error(String(j.error).replace(/^Error: /, ''));
+        }
+        if (j.extra) j.datos.extra = j.extra;
+        return j.datos;
+      } finally {
+        if (--enCurso === 0) $('guardando').hidden = true;
       }
-      return j.datos;
     }
     const dinero = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
     const $ = id => document.getElementById(id);
@@ -338,6 +383,13 @@
       $('fijos').textContent = f.activo ? (f.disponible < 0 ? '−' : '') + dinero.format(Math.abs(f.disponible)) : '—';
       $('fijosDet').textContent = f.activo ? 'Pagado ' + dinero.format(f.pagado) + ' de ' + dinero.format(f.asignado) : 'Sin asignar';
 
+      const con = (f.conceptos || []).filter(x => x.asignado || x.pagado || x.porQuincena);
+      $('bloqueConceptos').hidden = !con.length;
+      $('fijosConceptos').replaceChildren(...con.map(x => el('li', {},
+        el('div', {}, el('div', { className: 'nom', textContent: x.categoria }),
+          el('div', { className: 'det', textContent: (x.porQuincena ? dinero.format(x.porQuincena) + ' por quincena · ' : '') + 'pagado ' + dinero.format(x.pagado) })),
+        el('span', { className: 'm', style: x.disponible < 0 ? 'color:var(--bad)' : '', textContent: (x.disponible < 0 ? '−' : '') + dinero.format(Math.abs(x.disponible)) }))));
+
       const a = c.ahorro;
       $('ahorro').textContent = a.visible ? dinero.format(a.saldo) : '••••••';
       $('ahorroDet').textContent = a.visible ? 'Toca para opciones' : (a.tienePin ? 'Toca para ver' : 'Toca para crear tu PIN');
@@ -374,32 +426,57 @@
       const nombre = el('div', { className: 'nom', textContent: m.comercio || m.categoria });
       if (m.tipo === 'gasto' && m.cuenta === 'fijos') nombre.append(el('span', { className: 'chip', textContent: 'Fijos' }));
       const etiqueta = m.tipo === 'gasto' ? m.categoria : NOMBRE_TIPO[m.tipo] || m.categoria;
-      const li = el('li', { className: 'toca' },
-        el('div', {}, nombre, el('div', { className: 'det', textContent: m.fecha.slice(6) + ' · ' + etiqueta })),
+      if (m.aviso) nombre.append(el('span', { className: 'chip', style: 'color:var(--warn)', textContent: m.aviso === 'duplicado' ? '¿Duplicado?' : m.aviso.split(' ')[1] }));
+      const li = el('li', { className: m.guardando ? 'guardando' : 'toca' },
+        el('div', {}, nombre, el('div', { className: 'det', textContent: m.guardando ? 'Guardando…' : m.fecha.slice(6) + ' · ' + etiqueta })),
         el('div', { className: 'm ' + m.tipo, textContent: textoMonto(m) }));
-      li.addEventListener('click', () => OCULTOS.includes(m.tipo) && !PIN
-        ? pedirPin(() => { const n = ULTIMO.ultimos.find(x => x.id === m.id); if (n) editarMovimiento(n); })
+      if (!m.guardando) li.addEventListener('click', () => OCULTOS.includes(m.tipo) && !PIN
+        ? pedirPin(() => { const n = ULTIMO.ultimos.find(x => x.id === m.id && x.fila === m.fila); if (n) editarMovimiento(n); })
         : editarMovimiento(m));
       return li;
     }
 
+    // Pendiente: sin categoría, cobro en otra moneda (pide el monto real) o posible duplicado.
     function filaPendiente(m) {
-      const sel = selector('¿Qué categoría es?');
-      const b = el('button', { textContent: 'Guardar' });
-      const abajo = el('form', { className: 'abajo' }, sel, b);
-      abajo.addEventListener('submit', ev => {
-        ev.preventDefault();
-        if (!sel.valor()) return alert('Elige una categoría');
-        b.disabled = true;
-        api({ accion: 'categorizar', fila: m.fila, categoria: sel.valor() })
-          .then(d => { render(d); d.porClasificar.length ? abrirPendientes() : cerrarPanel(); })
-          .catch(e => { b.disabled = false; error(e); });
-      });
+      const moneda = m.aviso.startsWith('moneda') ? m.aviso.split(' ') : null; // ['moneda', 'USD', '20.00']
+      const dup = m.aviso === 'duplicado';
+      const sinCat = m.categoria === 'Revisar';
+      const montoReal = moneda ? el('input', { inputMode: 'decimal', placeholder: 'Monto real en pesos (lo ves en Banorte)' }) : null;
+      const sel = sinCat ? selector('¿Qué categoría es?') : null;
+      const terminar = d => { render(d); d.porClasificar.length ? abrirPendientes() : cerrarPanel(); };
+      const resolver = (botones, extra) => {
+        if (sel && !sel.valor()) return alert('Elige una categoría');
+        if (montoReal && !num(montoReal.value)) return alert('Escribe el monto real en pesos');
+        botones.forEach(b => b.disabled = true);
+        api(Object.assign({ accion: 'resolver', fila: m.fila, id: m.id, monto: montoReal ? montoReal.value : '',
+                            categoria: sel ? sel.valor() : '' }, extra))
+          .then(terminar).catch(e => { botones.forEach(b => b.disabled = false); error(e); });
+      };
+      const form = el('form', { className: 'form2' }, ...[montoReal, sel].filter(Boolean));
+      if (dup) {
+        const si = el('button', { type: 'button', className: 'peligro', textContent: 'Sí, borrar' });
+        const no = el('button', { type: 'button', className: 'sec', textContent: 'No, son dos' });
+        si.addEventListener('click', () => {
+          si.disabled = no.disabled = true;
+          api({ accion: 'borrar', fila: m.fila, id: m.id })
+            .then(d => { terminar(d); avisoDeshacer('Duplicado borrado', d.extra); })
+            .catch(e => { si.disabled = no.disabled = false; error(e); });
+        });
+        no.addEventListener('click', () => resolver([si, no]));
+        form.append(el('div', { className: 'botones' }, si, no));
+      } else {
+        const b = el('button', { textContent: 'Guardar' });
+        form.append(b);
+        form.addEventListener('submit', ev => { ev.preventDefault(); resolver([b]); });
+      }
+      const nota = moneda ? 'Cobro de ' + moneda[1] + ' ' + moneda[2] + ' · estimado ' + dinero.format(m.monto)
+                 : dup ? '¿Se cobró dos veces? ' + m.fecha : m.fecha;
       return el('li', { className: 'pend' },
         el('div', { className: 'arriba' },
-          el('div', {}, el('div', { className: 'nom', textContent: m.comercio || '(sin comercio)' }), el('div', { className: 'det', textContent: m.fecha })),
+          el('div', {}, el('div', { className: 'nom', textContent: m.comercio || '(sin comercio)' }),
+            el('div', { className: 'det' + (moneda || dup ? ' avisoMoneda' : ''), textContent: nota })),
           el('div', { className: 'm', textContent: dinero.format(m.monto) })),
-        abajo);
+        form);
     }
 
     function filaRegla(r) {
@@ -410,14 +487,25 @@
       return li;
     }
 
+    // Categoría fija: casilla + cuánto separas por quincena. Se guarda todo junto al cambiar.
+    function guardarFijas() {
+      const filas = [...document.querySelectorAll('#fijas li')];
+      const categorias = filas.filter(li => li.querySelector('input[type=checkbox]').checked).map(li => li.dataset.cat);
+      const montos = {};
+      filas.forEach(li => { const v = num(li.querySelector('.fijoMonto').value); if (v) montos[li.dataset.cat] = v; });
+      api({ accion: 'fijas', categorias, montos }).then(render).catch(e => { error(e); api({ accion: 'datos' }).then(render); });
+    }
     function filaFija(c) {
-      const caja = el('input', { type: 'checkbox', checked: ULTIMO.fijas.includes(c) });
-      caja.addEventListener('change', () => {
-        const lista = [...document.querySelectorAll('#fijas input')].filter(x => x.checked).map(x => x.value);
-        api({ accion: 'fijas', categorias: lista }).then(render).catch(e => { caja.checked = !caja.checked; error(e); });
-      });
-      caja.value = c;
-      return el('li', {}, el('label', {}, c, caja));
+      const activa = ULTIMO.fijas.includes(c);
+      const caja = el('input', { type: 'checkbox', checked: activa });
+      const monto = el('input', { className: 'fijoMonto', inputMode: 'decimal', placeholder: '$ / quincena',
+                                  value: ULTIMO.montosFijos[c] || '', hidden: !activa });
+      caja.addEventListener('change', () => { monto.hidden = !caja.checked; guardarFijas(); });
+      monto.addEventListener('change', guardarFijas);
+      const li = el('li', {}, el('div', { className: 'nom', textContent: c }),
+        el('div', { className: 'derecha', style: 'gap:10px' }, monto, caja));
+      li.dataset.cat = c;
+      return li;
     }
 
     let selMano;
@@ -445,6 +533,8 @@
       $('reglas').replaceChildren(...d.reglas.map(filaRegla));
       $('fijas').replaceChildren(...CATS.map(filaFija));
       $('renDe').replaceChildren(...CATS.map(c => el('option', { value: c, textContent: c })));
+      $('tcUSD').value = d.tc.USD;
+      $('tcEUR').value = d.tc.EUR;
     }
 
     // Movimientos agrupados por día: Hoy, Ayer, "martes 28 oct"…
@@ -504,7 +594,7 @@
     // Ejecuta una acción del panel: bloquea botones, manda, repinta y cierra.
     function accionPanel(botones, cuerpo, alTerminar) {
       botones.forEach(b => b.disabled = true);
-      api(cuerpo).then(d => { render(d); cerrarPanel(); if (alTerminar) alTerminar(); })
+      api(cuerpo).then(d => { render(d); cerrarPanel(); if (alTerminar) alTerminar(d); })
         .catch(e => { botones.forEach(b => b.disabled = false); error(e); });
     }
     const botonCancelar = () => { const b = el('button', { type: 'button', className: 'sec', textContent: 'Cancelar' }); b.addEventListener('click', cerrarPanel); return b; };
@@ -631,12 +721,23 @@
       const form = el('form', {}, selTipo, monto, concepto, cat, cuenta, guardar, el('div', { className: 'acciones' }, botonCancelar(), borrar));
       form.addEventListener('submit', ev => {
         ev.preventDefault();
-        accionPanel([guardar, borrar], { accion: 'editar', fila: m.fila, id: m.id, tipo, monto: monto.value,
-          comercio: concepto.value, categoria: tipo === 'gasto' ? cat.valor() : '', cuenta: tipo === 'gasto' ? cuenta.value : '' });
+        const cuerpo = { accion: 'editar', fila: m.fila, id: m.id, tipo, monto: monto.value,
+          comercio: concepto.value, categoria: tipo === 'gasto' ? cat.valor() : '', cuenta: tipo === 'gasto' ? cuenta.value : '' };
+        optimista(d => {
+          const it = d.ultimos.find(x => x.id === m.id && x.fila === m.fila);
+          if (!it) return;
+          ajustarTotales(d, it, -1);
+          Object.assign(it, { tipo, monto: num(monto.value), comercio: concepto.value, guardando: true,
+                              categoria: tipo === 'gasto' ? (cat.valor() || it.categoria) : NOMBRE_TIPO[tipo] });
+          ajustarTotales(d, it, 1);
+        }, cuerpo);
       });
       borrar.addEventListener('click', () => {
         if (!confirm('¿Borrar "' + (m.comercio || m.categoria) + '" de ' + textoMonto(m) + '?')) return;
-        accionPanel([guardar, borrar], { accion: 'borrar', fila: m.fila, id: m.id });
+        optimista(d => {
+          const i = d.ultimos.findIndex(x => x.id === m.id && x.fila === m.fila);
+          if (i >= 0) { ajustarTotales(d, d.ultimos[i], -1); d.ultimos.splice(i, 1); }
+        }, { accion: 'borrar', fila: m.fila, id: m.id }, d => avisoDeshacer('Movimiento borrado', d.extra));
       });
       abrirPanel(el('h3', { textContent: 'Editar movimiento' }),
         el('p', { className: 'det', textContent: m.fecha + (m.tarjeta ? ' · ' + m.tarjeta : '') }), form);
@@ -662,6 +763,81 @@
         el('p', { className: 'det', textContent: 'Los pendientes que coincidan se clasifican solos.' }), form);
     }
 
+    // ---------- Cambios al instante (UI optimista) ----------
+    // Aplica el cambio en pantalla de inmediato; si el servidor falla, regresa a como estaba.
+
+    // Suma (signo 1) o resta (signo -1) el efecto de un movimiento en los totales visibles.
+    function ajustarTotales(d, m, signo) {
+      if (m.monto == null) return;
+      const n = Number(m.monto) * signo, g = d.cuentas.gastar, t = d.tot;
+      if (m.tipo === 'gasto') {
+        const fijo = m.cuenta === 'fijos' || (!m.cuenta && d.fijas.includes(m.categoria));
+        if (fijo) { d.cuentas.fijos.pagado += n; d.cuentas.fijos.disponible -= n; }
+        else { g.gastado += n; g.disponible -= n; }
+        t.hoy += n; t.semana += n; t.mes += n;
+      } else if (m.tipo === 'reembolso') {
+        g.reembolsos += n; g.disponible += n; t.hoy -= n; t.semana -= n; t.mes -= n;
+      } else if (m.tipo === 'presupuesto') {
+        g.abonado += n; g.disponible += n;
+      }
+    }
+
+    function optimista(cambio, cuerpo, alTerminar) {
+      const antes = structuredClone(ULTIMO);
+      cambio(ULTIMO);
+      render(ULTIMO);
+      cerrarPanel();
+      return api(cuerpo)
+        .then(d => { render(d); if (alTerminar) alTerminar(d); })
+        .catch(e => { render(antes); error(e); });
+    }
+
+    let toastTimer = null, toastDatos = null;
+    function avisoDeshacer(texto, extra) {
+      if (!extra || !extra.borrado) return;
+      toastDatos = extra.borrado;
+      $('toastTxt').textContent = texto;
+      $('toast').hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { $('toast').hidden = true; }, 6000);
+    }
+    $('toastBtn').addEventListener('click', () => {
+      $('toast').hidden = true;
+      if (!toastDatos) return;
+      api({ accion: 'restaurar', fila: toastDatos.fila, valores: toastDatos.valores }).then(render).catch(error);
+      toastDatos = null;
+    });
+
+    // Cuadrar con Banorte: compara el saldo real con Para gastar + Fijos.
+    $('btnCuadrar').addEventListener('click', () => {
+      const c = ULTIMO.cuentas;
+      const esperado = c.gastar.disponible + c.fijos.disponible;
+      const saldo = el('input', { inputMode: 'decimal', placeholder: 'Saldo real de tu cuenta principal', required: true });
+      const res = el('div', { className: 'difCuadre' });
+      const ok = el('button', { textContent: 'Crear ajuste', disabled: true });
+      saldo.addEventListener('input', () => {
+        const dif = Math.round((num(saldo.value) - esperado) * 100) / 100;
+        ok.disabled = !saldo.value || Math.abs(dif) < 0.01;
+        res.style.color = Math.abs(dif) < 0.01 ? 'var(--ing)' : 'var(--warn)';
+        res.textContent = !saldo.value ? '' : Math.abs(dif) < 0.01 ? '✅ Cuadra perfecto'
+          : dif < 0 ? 'Faltan ' + dinero.format(-dif) + ' por registrar (gastos que la app no vio)'
+          : 'Tienes ' + dinero.format(dif) + ' más de lo que dice la app';
+      });
+      const form = el('form', {}, saldo, res, ok, botonCancelar());
+      form.addEventListener('submit', ev => {
+        ev.preventDefault();
+        accionPanel([ok], { accion: 'cuadrar', saldo: saldo.value, aplicar: true });
+      });
+      abrirPanel(el('h3', { textContent: 'Cuadrar con Banorte' }),
+        el('p', { className: 'det', textContent: 'La app espera ' + dinero.format(esperado) + ' (Para gastar ' + dinero.format(c.gastar.disponible)
+          + ' + Fijos ' + dinero.format(c.fijos.disponible) + '). Antes de cuadrar, pasa lo del ahorro a tu subcuenta.' }), form);
+      setTimeout(() => saldo.focus(), 50);
+    });
+
+    ['tcUSD', 'tcEUR'].forEach(id => $(id).addEventListener('change', () => {
+      api({ accion: 'tipoCambio', USD: $('tcUSD').value, EUR: $('tcEUR').value }).then(render).catch(error);
+    }));
+
     // ---------- Registrar: Gasto · Me regresaron · Llegó dinero ----------
 
     const TIPOS_MANO = [
@@ -678,17 +854,25 @@
         selMano.hidden = $('cuentaMano').hidden = v !== 'gasto';
         if (v !== 'deposito') $('concepto').placeholder = TIPOS_MANO.find(x => x[0] === v)[2];
         $('btn').textContent = v === 'deposito' ? 'Guardar reparto' : 'Agregar';
-        if (v === 'deposito') { actualizarFalta(); $('dTotal').focus(); }
+        if (v === 'deposito') { sugerirFijos(); actualizarFalta(); $('dTotal').focus(); }
       });
       return el('label', {}, inp, t);
     }));
+
+    // Sugiere para Fijos la suma de lo que separas por quincena en cada concepto.
+    function sugerirFijos() {
+      const partes = ULTIMO.fijas.filter(c => ULTIMO.montosFijos[c]).map(c => [c, ULTIMO.montosFijos[c]]);
+      const total = partes.reduce((t, [, m]) => t + m, 0);
+      $('dSugerido').textContent = total ? 'Fijos sugerido: ' + dinero.format(total) + ' (' + partes.map(([c, m]) => c + ' ' + dinero.format(m)).join(', ') + ')' : '';
+      if (total && !$('dFijos').value) $('dFijos').value = total;
+    }
 
     // Reparto en vivo: cuánto falta por asignar.
     function actualizarFalta() {
       const total = num($('dTotal').value);
       const falta = Math.round((total - num($('dGastar').value) - num($('dFijos').value) - num($('dAhorro').value)) * 100) / 100;
       const f = $('dFalta');
-      f.className = 'falta ' + (total && falta === 0 ? 'okk' : falta < 0 ? 'mal' : '');
+      f.className = 'falta ' + (!total ? '' : falta === 0 ? 'okk' : falta < 0 ? 'mal' : '');
       f.textContent = !total ? 'Escribe cuánto llegó' : falta === 0 ? '✅ Todo repartido'
         : falta > 0 ? 'Falta asignar ' + dinero.format(falta) : 'Te pasaste por ' + dinero.format(-falta);
       return falta;
@@ -712,15 +896,24 @@
         cuerpo = { tipo: tipoMano, monto: $('monto').value, comercio: $('concepto').value, origen: 'manual',
                    categoria: tipoMano === 'gasto' ? selMano.valor() : '', cuenta: tipoMano === 'gasto' ? $('cuentaMano').value : '' };
       }
+      const limpiar = () => {
+        ['monto', 'concepto', 'dTotal', 'dGastar', 'dFijos', 'dAhorro', 'dConcepto'].forEach(id => { $(id).value = ''; });
+        $('cuentaMano').value = '';
+        actualizarFalta();
+      };
+      if (tipoMano !== 'deposito') {
+        // Gasto o reembolso: aparece de inmediato; el servidor confirma después.
+        const ahora = new Date(), dd = n => String(n).padStart(2, '0');
+        const temp = { fila: -1, id: ahora.getTime(), tipo: tipoMano, monto: num(cuerpo.monto), comercio: cuerpo.comercio,
+          categoria: tipoMano === 'gasto' ? (cuerpo.categoria || 'Clasificando…') : NOMBRE_TIPO.reembolso, cuenta: cuerpo.cuenta,
+          aviso: '', guardando: true, fecha: dd(ahora.getDate()) + '/' + dd(ahora.getMonth() + 1) + ' ' + dd(ahora.getHours()) + ':' + dd(ahora.getMinutes()) };
+        limpiar();
+        optimista(d => { d.ultimos.unshift(temp); ajustarTotales(d, temp, 1); }, cuerpo);
+        return;
+      }
       $('btn').disabled = true;
       api(cuerpo)
-        .then(d => {
-          render(d);
-          cerrarPanel();
-          ['monto', 'concepto', 'dTotal', 'dGastar', 'dFijos', 'dAhorro', 'dConcepto'].forEach(id => { $(id).value = ''; });
-          $('cuentaMano').value = '';
-          actualizarFalta();
-        })
+        .then(d => { render(d); cerrarPanel(); limpiar(); })
         .catch(error)
         .finally(() => { $('btn').disabled = false; });
     });
@@ -861,7 +1054,7 @@
     // ---------- Actualización automática ----------
     // GitHub Pages deja la página en caché 10 min. Al abrir, se compara con version.txt (sin caché);
     // si hay versión nueva, se refresca la copia guardada y se recarga una sola vez.
-    const VERSION = '2026-10-30-5';
+    const VERSION = '2026-10-30-213101';
     async function revisarVersion() {
       try {
         const v = (await (await fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })).text()).trim();
