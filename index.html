@@ -855,11 +855,11 @@
     // ---------- Actualización automática ----------
     // GitHub Pages deja la página en caché 10 min. Al abrir, se compara con version.txt (sin caché);
     // si hay versión nueva, se refresca la copia guardada y se recarga una sola vez.
-    const VERSION = '2026-10-30-3';
+    const VERSION = '2026-10-30-4';
     async function revisarVersion() {
       try {
         const v = (await (await fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })).text()).trim();
-        if (v && v !== VERSION && sessionStorage.getItem('recargado') !== v) {
+        if (/^\d{4}-\d{2}-\d{2}-\d+$/.test(v) && v !== VERSION && sessionStorage.getItem('recargado') !== v) {
           sessionStorage.setItem('recargado', v);
           await fetch(location.pathname, { cache: 'reload' });
           location.reload();
